@@ -1,0 +1,18 @@
+{
+  "name": "@catering/eslint-config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./base": "./base.mjs",
+    "./next": "./next.mjs",
+    "./nest": "./nest.mjs"
+  },
+  "dependencies": {
+    "@eslint/js": "9.39.1",
+    "eslint": "9.39.1",
+    "eslint-config-next": "16.4.3",
+    "globals": "16.4.0",
+    "typescript-eslint": "8.46.2"
+  }
+}

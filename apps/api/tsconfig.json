@@ -1,0 +1,9 @@
+{
+  "extends": "../../packages/typescript-config/nestjs.json",
+  "compilerOptions": {
+    "resolvePackageJsonExports": true,
+    "outDir": "./dist",
+    "rootDir": ".",
+    "types": ["vitest/globals", "node"]
+  }
+}

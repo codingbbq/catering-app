@@ -1,0 +1,52 @@
+I want to build a production-quality, multi-tenant SaaS application for catering businesses.
+
+The application will include:
+- A Super Admin Console to track all registered catering businesses (tenants).
+- Tenant-specific business administration and user roles.
+- Customer and enquiry management.
+- Food catalogue and menu builder.
+- Quotations, quotation revisions and booking confirmation.
+- WhatsApp, email and SMS integrations.
+- Modules for invoices, payments, daily meal orders, inventory, procurement and kitchen operations.
+
+## Technology stack
+
+- Frontend: Next.js, React and TypeScript.
+- Styling: Tailwind CSS and daisyUI.
+- Forms: Tanstack Form.
+- Validation: Zod.
+- Server data: Tanstack Query.
+- Tables: Tanstack Table.
+- Backend: NestJS and TypeScript.
+- Database: PostgreSQL.
+- ORM: Prisma.
+- Testing: Playwright plus appropriate unit and integration testing tools.
+
+## What I want you to do first
+
+I am starting with a completely empty folder.
+
+1. Inspect the current folder and check which development tools are installed.
+2. Propose a simple, maintainable monorepo structure for the frontend, backend and shared types.
+3. Recommend a package manager and workspace configuration.
+4. Create the initial project scaffolding with compatible stable package versions.
+5. Add a root README with setup instructions.
+6. Add a .gitignore and safe environment-variable examples. Never create or commit real secrets.
+7. Add basic formatting, linting, type-checking and development scripts.
+8. Add a project-specific AI instructions file explaining the architecture and coding conventions.
+9. Configure the frontend and backend to run independently.
+10. Explain every command you intend to execute and any important dependencies.
+
+## Important constraints
+
+- Do not implement business features yet.
+- Do not introduce microservices.
+- Do not install unnecessary dependencies.
+- Do not assume that PostgreSQL or other external services are running.
+- Do not overwrite existing files without reviewing them.
+- Ask for my approval before destructive commands or changes outside this project folder.
+- Use current, mutually compatible package versions.
+- Run available checks and report the actual results.
+- If a prerequisite is missing, explain how to install it instead of pretending it is available.
+
+First present the proposed folder structure, setup steps and commands. Wait for my approval before making changes.

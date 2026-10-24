@@ -1,0 +1,13 @@
+{
+  "name": "@catering/typescript-config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./base": "./base.json",
+    "./nextjs": "./nextjs.json",
+    "./nestjs": "./nestjs.json",
+    "./package": "./package.json",
+    "./react-library": "./react-library.json"
+  }
+}
