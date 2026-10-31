@@ -1,43 +1,49 @@
+import Link from 'next/link';
+
 export default function Home() {
   return (
     <main className="flex flex-1 items-center justify-center px-6 py-16">
       <section className="card w-full max-w-5xl bg-base-100 shadow-xl">
         <div className="card-body gap-8">
           <div className="space-y-4">
-            <span className="badge badge-primary badge-outline">Scaffold Ready</span>
-            <h1 className="text-4xl font-semibold tracking-tight">Catering SaaS monorepo baseline</h1>
+            <span className="badge badge-primary badge-outline">FND-001 Ready</span>
+            <h1 className="text-4xl font-semibold tracking-tight">Tenant isolation foundation</h1>
             <p className="max-w-3xl text-base-content/70">
-              This workspace is prepared for a multi-tenant catering platform with independent
-              Next.js and NestJS applications, shared Zod contracts, Prisma, and core developer
-              tooling.
+              The workspace now separates platform and tenant route shells, shared tenancy
+              contracts, and foundational API guardrails before business modules are introduced.
             </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
             <div className="rounded-2xl border border-base-300 bg-base-200 p-5">
-              <h2 className="text-lg font-medium">Frontend</h2>
+              <h2 className="text-lg font-medium">Platform shell</h2>
               <p className="mt-2 text-sm text-base-content/70">
-                Next.js App Router, Tailwind CSS, daisyUI, TanStack Query, Form, and Table.
+                Reserved for Super Admin capabilities and tenant lifecycle operations.
               </p>
+              <Link className="btn btn-sm btn-secondary mt-4" href="/platform">
+                Open platform shell
+              </Link>
             </div>
             <div className="rounded-2xl border border-base-300 bg-base-200 p-5">
-              <h2 className="text-lg font-medium">Backend</h2>
+              <h2 className="text-lg font-medium">Tenant shell</h2>
               <p className="mt-2 text-sm text-base-content/70">
-                NestJS with Prisma and PostgreSQL-ready configuration without assuming a running
-                database.
+                Reserved for tenant-scoped business workflows with explicit tenant context.
               </p>
+              <Link className="btn btn-sm btn-primary mt-4" href="/tenant/demo-catering">
+                Open tenant shell
+              </Link>
             </div>
             <div className="rounded-2xl border border-base-300 bg-base-200 p-5">
-              <h2 className="text-lg font-medium">Shared packages</h2>
+              <h2 className="text-lg font-medium">Shared guardrails</h2>
               <p className="mt-2 text-sm text-base-content/70">
-                Shared types, central TypeScript presets, and reusable lint configuration.
+                Shared contracts, Prisma tenant models, and NestJS access-scope enforcement.
               </p>
             </div>
           </div>
 
           <div className="rounded-2xl border border-dashed border-base-300 p-5 text-sm text-base-content/70">
-            Next steps are to finish installation, validate lint and typecheck, and then begin
-            domain-by-domain feature design.
+            Next steps are to connect authentication and tenant membership on top of these
+            boundaries before business-domain features are implemented.
           </div>
         </div>
       </section>

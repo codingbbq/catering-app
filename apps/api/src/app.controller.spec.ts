@@ -15,8 +15,16 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('should expose the tenant isolation foundation status', () => {
+      expect(appController.getFoundationStatus()).toEqual({
+        feature: 'FND-001',
+        name: 'Tenant Isolation Foundation',
+        routeScopes: {
+          platform: '/platform/tenancy/*',
+          tenant: '/tenant/tenancy/*',
+        },
+        status: 'ready',
+      });
     });
   });
 });

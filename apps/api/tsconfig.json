@@ -1,9 +1,12 @@
 {
   "extends": "../../packages/typescript-config/nestjs.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "resolvePackageJsonExports": true,
     "outDir": "./dist",
-    "rootDir": ".",
+    "paths": {
+      "@catering/shared-types": ["../../packages/shared-types/src/index.ts"]
+    },
     "types": ["vitest/globals", "node"]
   }
 }
