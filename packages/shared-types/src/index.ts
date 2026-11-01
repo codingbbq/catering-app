@@ -64,3 +64,104 @@ export type RequestContext = z.infer<typeof requestContextSchema>;
 export type TenantContextHeaders = z.infer<typeof tenantContextHeadersSchema>;
 export type AuditLogScope = z.infer<typeof auditLogScopeSchema>;
 export type AuditLogOutcome = z.infer<typeof auditLogOutcomeSchema>;
+
+// --- IAM-001: Authentication and Session Management ---
+
+export const platformRoleSchema = z.enum(["super_admin", "platform_ops"]);
+export const tenantRoleSchema = z.enum(["owner", "admin", "manager", "staff"]);
+export const invitationStatusSchema = z.enum(["pending", "accepted", "expired", "revoked"]);
+
+export const signInRequestSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8).max(128),
+});
+
+export const platformSignInResponseSchema = z.object({
+  accessToken: z.string(),
+  refreshToken: z.string(),
+  user: z.object({
+    id: z.string().uuid(),
+    email: z.string().email(),
+    displayName: z.string(),
+    role: platformRoleSchema,
+  }),
+});
+
+export const tenantSignInResponseSchema = z.object({
+  accessToken: z.string(),
+  refreshToken: z.string(),
+  user: z.object({
+    id: z.string().uuid(),
+    email: z.string().email(),
+    displayName: z.string(),
+    role: tenantRoleSchema,
+    tenantId: tenantIdSchema,
+    tenantSlug: tenantSlugSchema,
+  }),
+});
+
+export const refreshRequestSchema = z.object({
+  refreshToken: z.string().min(1),
+});
+
+export const refreshResponseSchema = z.object({
+  accessToken: z.string(),
+  refreshToken: z.string(),
+});
+
+export const invitationAcceptRequestSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(8).max(128),
+  displayName: z.string().min(1).max(160),
+});
+
+export const forgotPasswordRequestSchema = z.object({
+  email: z.string().email(),
+  tenantSlug: tenantSlugSchema,
+});
+
+export const resetPasswordRequestSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(8).max(128),
+});
+
+export const authSessionSchema = z.object({
+  userId: z.string().uuid(),
+  email: z.string().email(),
+  displayName: z.string(),
+  scope: accessScopeSchema,
+  role: z.union([platformRoleSchema, tenantRoleSchema]),
+  tenantId: tenantIdSchema.optional(),
+  tenantSlug: tenantSlugSchema.optional(),
+});
+
+export const authenticatedPlatformContextSchema = platformRequestContextSchema.extend({
+  userId: z.string().uuid(),
+  role: platformRoleSchema,
+});
+
+export const authenticatedTenantContextSchema = tenantRequestContextSchema.extend({
+  userId: z.string().uuid(),
+  role: tenantRoleSchema,
+});
+
+export const authenticatedRequestContextSchema = z.discriminatedUnion("scope", [
+  authenticatedPlatformContextSchema,
+  authenticatedTenantContextSchema,
+]);
+
+export type PlatformRole = z.infer<typeof platformRoleSchema>;
+export type TenantRole = z.infer<typeof tenantRoleSchema>;
+export type InvitationStatus = z.infer<typeof invitationStatusSchema>;
+export type SignInRequest = z.infer<typeof signInRequestSchema>;
+export type PlatformSignInResponse = z.infer<typeof platformSignInResponseSchema>;
+export type TenantSignInResponse = z.infer<typeof tenantSignInResponseSchema>;
+export type RefreshRequest = z.infer<typeof refreshRequestSchema>;
+export type RefreshResponse = z.infer<typeof refreshResponseSchema>;
+export type InvitationAcceptRequest = z.infer<typeof invitationAcceptRequestSchema>;
+export type ForgotPasswordRequest = z.infer<typeof forgotPasswordRequestSchema>;
+export type ResetPasswordRequest = z.infer<typeof resetPasswordRequestSchema>;
+export type AuthSession = z.infer<typeof authSessionSchema>;
+export type AuthenticatedPlatformContext = z.infer<typeof authenticatedPlatformContextSchema>;
+export type AuthenticatedTenantContext = z.infer<typeof authenticatedTenantContextSchema>;
+export type AuthenticatedRequestContext = z.infer<typeof authenticatedRequestContextSchema>;

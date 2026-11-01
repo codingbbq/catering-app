@@ -30,6 +30,8 @@ model Tenant {
   displayName String
   status      TenantStatus    @default(onboarding)
   settings    TenantSettings?
+  users       TenantUser[]
+  invitations UserInvitation[]
   auditLogs   AuditLog[]
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
@@ -44,6 +46,93 @@ model TenantSettings {
   tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+enum PlatformRole {
+  super_admin
+  platform_ops
+}
+
+enum TenantRole {
+  owner
+  admin
+  manager
+  staff
+}
+
+enum InvitationStatus {
+  pending
+  accepted
+  expired
+  revoked
+}
+
+model PlatformUser {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  passwordHash String
+  displayName  String
+  role         PlatformRole @default(platform_ops)
+  isActive     Boolean      @default(true)
+  sessions     Session[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model TenantUser {
+  id              String      @id @default(uuid())
+  email           String
+  passwordHash    String
+  displayName     String
+  role            TenantRole  @default(staff)
+  isActive        Boolean     @default(true)
+  tenantId        String
+  tenant          Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sessions        Session[]
+  invitedBy       String?
+  resetToken      String?     @unique
+  resetTokenExpiry DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([email, tenantId])
+  @@index([tenantId])
+}
+
+model UserInvitation {
+  id        String           @id @default(uuid())
+  email     String
+  token     String           @unique
+  tenantId  String
+  tenant    Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  role      TenantRole       @default(staff)
+  status    InvitationStatus @default(pending)
+  invitedBy String
+  expiresAt DateTime
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([tenantId])
+  @@index([token])
+}
+
+model Session {
+  id             String        @id @default(uuid())
+  refreshToken   String        @unique
+  scope          AuditLogScope
+  platformUserId String?
+  platformUser   PlatformUser? @relation(fields: [platformUserId], references: [id], onDelete: Cascade)
+  tenantUserId   String?
+  tenantUser     TenantUser?   @relation(fields: [tenantUserId], references: [id], onDelete: Cascade)
+  tenantId       String?
+  userAgent      String?
+  ipAddress      String?
+  expiresAt      DateTime
+  createdAt      DateTime      @default(now())
+
+  @@index([platformUserId])
+  @@index([tenantUserId])
+  @@index([expiresAt])
 }
 
 model AuditLog {

@@ -40,4 +40,74 @@ export const tenantContextHeadersSchema = z.object({
 });
 export const auditLogScopeSchema = z.enum(["platform", "tenant"]);
 export const auditLogOutcomeSchema = z.enum(["allowed", "denied"]);
+export const platformRoleSchema = z.enum(["super_admin", "platform_ops"]);
+export const tenantRoleSchema = z.enum(["owner", "admin", "manager", "staff"]);
+export const invitationStatusSchema = z.enum(["pending", "accepted", "expired", "revoked"]);
+export const signInRequestSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(8).max(128),
+});
+export const platformSignInResponseSchema = z.object({
+    accessToken: z.string(),
+    refreshToken: z.string(),
+    user: z.object({
+        id: z.string().uuid(),
+        email: z.string().email(),
+        displayName: z.string(),
+        role: platformRoleSchema,
+    }),
+});
+export const tenantSignInResponseSchema = z.object({
+    accessToken: z.string(),
+    refreshToken: z.string(),
+    user: z.object({
+        id: z.string().uuid(),
+        email: z.string().email(),
+        displayName: z.string(),
+        role: tenantRoleSchema,
+        tenantId: tenantIdSchema,
+        tenantSlug: tenantSlugSchema,
+    }),
+});
+export const refreshRequestSchema = z.object({
+    refreshToken: z.string().min(1),
+});
+export const refreshResponseSchema = z.object({
+    accessToken: z.string(),
+    refreshToken: z.string(),
+});
+export const invitationAcceptRequestSchema = z.object({
+    token: z.string().min(1),
+    password: z.string().min(8).max(128),
+    displayName: z.string().min(1).max(160),
+});
+export const forgotPasswordRequestSchema = z.object({
+    email: z.string().email(),
+    tenantSlug: tenantSlugSchema,
+});
+export const resetPasswordRequestSchema = z.object({
+    token: z.string().min(1),
+    password: z.string().min(8).max(128),
+});
+export const authSessionSchema = z.object({
+    userId: z.string().uuid(),
+    email: z.string().email(),
+    displayName: z.string(),
+    scope: accessScopeSchema,
+    role: z.union([platformRoleSchema, tenantRoleSchema]),
+    tenantId: tenantIdSchema.optional(),
+    tenantSlug: tenantSlugSchema.optional(),
+});
+export const authenticatedPlatformContextSchema = platformRequestContextSchema.extend({
+    userId: z.string().uuid(),
+    role: platformRoleSchema,
+});
+export const authenticatedTenantContextSchema = tenantRequestContextSchema.extend({
+    userId: z.string().uuid(),
+    role: tenantRoleSchema,
+});
+export const authenticatedRequestContextSchema = z.discriminatedUnion("scope", [
+    authenticatedPlatformContextSchema,
+    authenticatedTenantContextSchema,
+]);
 //# sourceMappingURL=index.js.map

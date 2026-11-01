@@ -85,3 +85,159 @@ export type RequestContext = z.infer<typeof requestContextSchema>;
 export type TenantContextHeaders = z.infer<typeof tenantContextHeadersSchema>;
 export type AuditLogScope = z.infer<typeof auditLogScopeSchema>;
 export type AuditLogOutcome = z.infer<typeof auditLogOutcomeSchema>;
+export declare const platformRoleSchema: z.ZodEnum<{
+    super_admin: "super_admin";
+    platform_ops: "platform_ops";
+}>;
+export declare const tenantRoleSchema: z.ZodEnum<{
+    owner: "owner";
+    admin: "admin";
+    manager: "manager";
+    staff: "staff";
+}>;
+export declare const invitationStatusSchema: z.ZodEnum<{
+    pending: "pending";
+    accepted: "accepted";
+    expired: "expired";
+    revoked: "revoked";
+}>;
+export declare const signInRequestSchema: z.ZodObject<{
+    email: z.ZodString;
+    password: z.ZodString;
+}, z.core.$strip>;
+export declare const platformSignInResponseSchema: z.ZodObject<{
+    accessToken: z.ZodString;
+    refreshToken: z.ZodString;
+    user: z.ZodObject<{
+        id: z.ZodString;
+        email: z.ZodString;
+        displayName: z.ZodString;
+        role: z.ZodEnum<{
+            super_admin: "super_admin";
+            platform_ops: "platform_ops";
+        }>;
+    }, z.core.$strip>;
+}, z.core.$strip>;
+export declare const tenantSignInResponseSchema: z.ZodObject<{
+    accessToken: z.ZodString;
+    refreshToken: z.ZodString;
+    user: z.ZodObject<{
+        id: z.ZodString;
+        email: z.ZodString;
+        displayName: z.ZodString;
+        role: z.ZodEnum<{
+            owner: "owner";
+            admin: "admin";
+            manager: "manager";
+            staff: "staff";
+        }>;
+        tenantId: z.ZodString;
+        tenantSlug: z.ZodString;
+    }, z.core.$strip>;
+}, z.core.$strip>;
+export declare const refreshRequestSchema: z.ZodObject<{
+    refreshToken: z.ZodString;
+}, z.core.$strip>;
+export declare const refreshResponseSchema: z.ZodObject<{
+    accessToken: z.ZodString;
+    refreshToken: z.ZodString;
+}, z.core.$strip>;
+export declare const invitationAcceptRequestSchema: z.ZodObject<{
+    token: z.ZodString;
+    password: z.ZodString;
+    displayName: z.ZodString;
+}, z.core.$strip>;
+export declare const forgotPasswordRequestSchema: z.ZodObject<{
+    email: z.ZodString;
+    tenantSlug: z.ZodString;
+}, z.core.$strip>;
+export declare const resetPasswordRequestSchema: z.ZodObject<{
+    token: z.ZodString;
+    password: z.ZodString;
+}, z.core.$strip>;
+export declare const authSessionSchema: z.ZodObject<{
+    userId: z.ZodString;
+    email: z.ZodString;
+    displayName: z.ZodString;
+    scope: z.ZodEnum<{
+        platform: "platform";
+        tenant: "tenant";
+    }>;
+    role: z.ZodUnion<readonly [z.ZodEnum<{
+        super_admin: "super_admin";
+        platform_ops: "platform_ops";
+    }>, z.ZodEnum<{
+        owner: "owner";
+        admin: "admin";
+        manager: "manager";
+        staff: "staff";
+    }>]>;
+    tenantId: z.ZodOptional<z.ZodString>;
+    tenantSlug: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>;
+export declare const authenticatedPlatformContextSchema: z.ZodObject<{
+    scope: z.ZodLiteral<"platform">;
+    userId: z.ZodString;
+    role: z.ZodEnum<{
+        super_admin: "super_admin";
+        platform_ops: "platform_ops";
+    }>;
+}, z.core.$strip>;
+export declare const authenticatedTenantContextSchema: z.ZodObject<{
+    scope: z.ZodLiteral<"tenant">;
+    tenantId: z.ZodString;
+    tenantSlug: z.ZodOptional<z.ZodString>;
+    tenantStatus: z.ZodEnum<{
+        onboarding: "onboarding";
+        active: "active";
+        suspended: "suspended";
+        archived: "archived";
+    }>;
+    userId: z.ZodString;
+    role: z.ZodEnum<{
+        owner: "owner";
+        admin: "admin";
+        manager: "manager";
+        staff: "staff";
+    }>;
+}, z.core.$strip>;
+export declare const authenticatedRequestContextSchema: z.ZodDiscriminatedUnion<[z.ZodObject<{
+    scope: z.ZodLiteral<"platform">;
+    userId: z.ZodString;
+    role: z.ZodEnum<{
+        super_admin: "super_admin";
+        platform_ops: "platform_ops";
+    }>;
+}, z.core.$strip>, z.ZodObject<{
+    scope: z.ZodLiteral<"tenant">;
+    tenantId: z.ZodString;
+    tenantSlug: z.ZodOptional<z.ZodString>;
+    tenantStatus: z.ZodEnum<{
+        onboarding: "onboarding";
+        active: "active";
+        suspended: "suspended";
+        archived: "archived";
+    }>;
+    userId: z.ZodString;
+    role: z.ZodEnum<{
+        owner: "owner";
+        admin: "admin";
+        manager: "manager";
+        staff: "staff";
+    }>;
+}, z.core.$strip>], "scope">;
+export type PlatformRole = z.infer<typeof platformRoleSchema>;
+export type TenantRole = z.infer<typeof tenantRoleSchema>;
+export type InvitationStatus = z.infer<typeof invitationStatusSchema>;
+export type SignInRequest = z.infer<typeof signInRequestSchema>;
+export type PlatformSignInResponse = z.infer<typeof platformSignInResponseSchema>;
+export type TenantSignInResponse = z.infer<typeof tenantSignInResponseSchema>;
+export type RefreshRequest = z.infer<typeof refreshRequestSchema>;
+export type RefreshResponse = z.infer<typeof refreshResponseSchema>;
+export type InvitationAcceptRequest = z.infer<typeof invitationAcceptRequestSchema>;
+export type ForgotPasswordRequest = z.infer<typeof forgotPasswordRequestSchema>;
+export type ResetPasswordRequest = z.infer<typeof resetPasswordRequestSchema>;
+export type AuthSession = z.infer<typeof authSessionSchema>;
+export type AuthenticatedPlatformContext = z.infer<typeof authenticatedPlatformContextSchema>;
+export type AuthenticatedTenantContext = z.infer<typeof authenticatedTenantContextSchema>;
+export type AuthenticatedRequestContext = z.infer<typeof authenticatedRequestContextSchema>;
