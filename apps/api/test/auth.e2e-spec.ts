@@ -9,10 +9,27 @@ import { AppModule } from '../src/app.module.js';
 
 const prisma = new PrismaClient();
 
+// Unique prefix to avoid collisions with other parallel e2e suites
+const P = 'auth-e2e';
+const TENANT_SLUG = `${P}-catering`;
+const PLATFORM_EMAIL = `${P}-admin@platform.test`;
+const TENANT_EMAIL = `${P}-owner@tenant.test`;
+
+async function cleanup() {
+  await prisma.session.deleteMany({ where: { OR: [
+    { platformUser: { email: PLATFORM_EMAIL } },
+    { tenantUser: { tenant: { slug: TENANT_SLUG } } },
+  ] } });
+  await prisma.userInvitation.deleteMany({ where: { tenant: { slug: TENANT_SLUG } } });
+  await prisma.tenantUser.deleteMany({ where: { tenant: { slug: TENANT_SLUG } } });
+  await prisma.platformUser.deleteMany({ where: { email: PLATFORM_EMAIL } });
+  await prisma.tenantSettings.deleteMany({ where: { tenant: { slug: TENANT_SLUG } } });
+  await prisma.tenant.deleteMany({ where: { slug: TENANT_SLUG } });
+}
+
 describe('Auth (e2e)', () => {
   let app: INestApplication<App>;
   let tenantId: string;
-  const tenantSlug = 'test-catering';
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -22,20 +39,13 @@ describe('Auth (e2e)', () => {
     app = moduleFixture.createNestApplication();
     await app.init();
 
-    // Clean up test data
-    await prisma.session.deleteMany({});
-    await prisma.userInvitation.deleteMany({});
-    await prisma.tenantUser.deleteMany({});
-    await prisma.platformUser.deleteMany({});
-    await prisma.tenantSettings.deleteMany({});
-    await prisma.auditLog.deleteMany({});
-    await prisma.tenant.deleteMany({});
+    await cleanup();
 
     // Seed a tenant
     const tenant = await prisma.tenant.create({
       data: {
-        slug: tenantSlug,
-        displayName: 'Test Catering Co',
+        slug: TENANT_SLUG,
+        displayName: 'Auth E2E Catering Co',
         status: 'active',
       },
     });
@@ -44,9 +54,9 @@ describe('Auth (e2e)', () => {
     // Seed a platform user
     await prisma.platformUser.create({
       data: {
-        email: 'admin@platform.test',
+        email: PLATFORM_EMAIL,
         passwordHash: await hashPassword('platform-pass-123'),
-        displayName: 'Platform Admin',
+        displayName: 'Auth E2E Platform Admin',
         role: 'super_admin',
       },
     });
@@ -54,9 +64,9 @@ describe('Auth (e2e)', () => {
     // Seed a tenant user
     await prisma.tenantUser.create({
       data: {
-        email: 'owner@test-catering.test',
+        email: TENANT_EMAIL,
         passwordHash: await hashPassword('tenant-pass-123'),
-        displayName: 'Tenant Owner',
+        displayName: 'Auth E2E Tenant Owner',
         role: 'owner',
         tenantId,
       },
@@ -64,13 +74,7 @@ describe('Auth (e2e)', () => {
   });
 
   afterAll(async () => {
-    await prisma.session.deleteMany({});
-    await prisma.userInvitation.deleteMany({});
-    await prisma.tenantUser.deleteMany({});
-    await prisma.platformUser.deleteMany({});
-    await prisma.tenantSettings.deleteMany({});
-    await prisma.auditLog.deleteMany({});
-    await prisma.tenant.deleteMany({});
+    await cleanup();
     await prisma.$disconnect();
     await app.close();
   });
@@ -81,19 +85,19 @@ describe('Auth (e2e)', () => {
     it('should sign in a platform user', async () => {
       const res = await request(app.getHttpServer())
         .post('/platform/auth/sign-in')
-        .send({ email: 'admin@platform.test', password: 'platform-pass-123' })
+        .send({ email: PLATFORM_EMAIL, password: 'platform-pass-123' })
         .expect(201);
 
       expect(res.body.accessToken).toBeDefined();
       expect(res.body.refreshToken).toBeDefined();
-      expect(res.body.user.email).toBe('admin@platform.test');
+      expect(res.body.user.email).toBe(PLATFORM_EMAIL);
       expect(res.body.user.role).toBe('super_admin');
     });
 
     it('should reject invalid credentials', async () => {
       await request(app.getHttpServer())
         .post('/platform/auth/sign-in')
-        .send({ email: 'admin@platform.test', password: 'wrong-password' })
+        .send({ email: PLATFORM_EMAIL, password: 'wrong-password' })
         .expect(401);
     });
 
@@ -110,29 +114,29 @@ describe('Auth (e2e)', () => {
   describe('POST /auth/sign-in/:tenantSlug', () => {
     it('should sign in a tenant user', async () => {
       const res = await request(app.getHttpServer())
-        .post(`/auth/sign-in/${tenantSlug}`)
-        .send({ email: 'owner@test-catering.test', password: 'tenant-pass-123' })
+        .post(`/auth/sign-in/${TENANT_SLUG}`)
+        .send({ email: TENANT_EMAIL, password: 'tenant-pass-123' })
         .expect(201);
 
       expect(res.body.accessToken).toBeDefined();
       expect(res.body.refreshToken).toBeDefined();
-      expect(res.body.user.email).toBe('owner@test-catering.test');
+      expect(res.body.user.email).toBe(TENANT_EMAIL);
       expect(res.body.user.role).toBe('owner');
       expect(res.body.user.tenantId).toBe(tenantId);
-      expect(res.body.user.tenantSlug).toBe(tenantSlug);
+      expect(res.body.user.tenantSlug).toBe(TENANT_SLUG);
     });
 
     it('should reject invalid tenant slug', async () => {
       await request(app.getHttpServer())
         .post('/auth/sign-in/nonexistent-tenant')
-        .send({ email: 'owner@test-catering.test', password: 'tenant-pass-123' })
+        .send({ email: TENANT_EMAIL, password: 'tenant-pass-123' })
         .expect(404);
     });
 
     it('should reject wrong password', async () => {
       await request(app.getHttpServer())
-        .post(`/auth/sign-in/${tenantSlug}`)
-        .send({ email: 'owner@test-catering.test', password: 'wrong-password' })
+        .post(`/auth/sign-in/${TENANT_SLUG}`)
+        .send({ email: TENANT_EMAIL, password: 'wrong-password' })
         .expect(401);
     });
   });
@@ -142,8 +146,8 @@ describe('Auth (e2e)', () => {
   describe('POST /auth/refresh', () => {
     it('should refresh tokens', async () => {
       const signIn = await request(app.getHttpServer())
-        .post(`/auth/sign-in/${tenantSlug}`)
-        .send({ email: 'owner@test-catering.test', password: 'tenant-pass-123' })
+        .post(`/auth/sign-in/${TENANT_SLUG}`)
+        .send({ email: TENANT_EMAIL, password: 'tenant-pass-123' })
         .expect(201);
 
       const res = await request(app.getHttpServer())
@@ -169,8 +173,8 @@ describe('Auth (e2e)', () => {
   describe('POST /auth/sign-out', () => {
     it('should sign out and invalidate refresh token', async () => {
       const signIn = await request(app.getHttpServer())
-        .post(`/auth/sign-in/${tenantSlug}`)
-        .send({ email: 'owner@test-catering.test', password: 'tenant-pass-123' })
+        .post(`/auth/sign-in/${TENANT_SLUG}`)
+        .send({ email: TENANT_EMAIL, password: 'tenant-pass-123' })
         .expect(201);
 
       await request(app.getHttpServer())
@@ -198,7 +202,7 @@ describe('Auth (e2e)', () => {
     it('should allow authenticated platform access', async () => {
       const signIn = await request(app.getHttpServer())
         .post('/platform/auth/sign-in')
-        .send({ email: 'admin@platform.test', password: 'platform-pass-123' })
+        .send({ email: PLATFORM_EMAIL, password: 'platform-pass-123' })
         .expect(201);
 
       const res = await request(app.getHttpServer())
@@ -217,8 +221,8 @@ describe('Auth (e2e)', () => {
 
     it('should allow authenticated tenant access', async () => {
       const signIn = await request(app.getHttpServer())
-        .post(`/auth/sign-in/${tenantSlug}`)
-        .send({ email: 'owner@test-catering.test', password: 'tenant-pass-123' })
+        .post(`/auth/sign-in/${TENANT_SLUG}`)
+        .send({ email: TENANT_EMAIL, password: 'tenant-pass-123' })
         .expect(201);
 
       const res = await request(app.getHttpServer())
@@ -232,7 +236,7 @@ describe('Auth (e2e)', () => {
     it('should reject platform token on tenant endpoint', async () => {
       const signIn = await request(app.getHttpServer())
         .post('/platform/auth/sign-in')
-        .send({ email: 'admin@platform.test', password: 'platform-pass-123' })
+        .send({ email: PLATFORM_EMAIL, password: 'platform-pass-123' })
         .expect(201);
 
       await request(app.getHttpServer())
@@ -250,11 +254,11 @@ describe('Auth (e2e)', () => {
 
       await prisma.userInvitation.create({
         data: {
-          email: 'newuser@test-catering.test',
+          email: `${P}-newuser@tenant.test`,
           token,
           tenantId,
           role: 'staff',
-          invitedBy: 'owner@test-catering.test',
+          invitedBy: TENANT_EMAIL,
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         },
       });
@@ -270,7 +274,7 @@ describe('Auth (e2e)', () => {
 
       expect(res.body.accessToken).toBeDefined();
       expect(res.body.refreshToken).toBeDefined();
-      expect(res.body.user.email).toBe('newuser@test-catering.test');
+      expect(res.body.user.email).toBe(`${P}-newuser@tenant.test`);
       expect(res.body.user.role).toBe('staff');
     });
 
@@ -279,11 +283,11 @@ describe('Auth (e2e)', () => {
 
       await prisma.userInvitation.create({
         data: {
-          email: 'expired@test-catering.test',
+          email: `${P}-expired@tenant.test`,
           token,
           tenantId,
           role: 'staff',
-          invitedBy: 'owner@test-catering.test',
+          invitedBy: TENANT_EMAIL,
           expiresAt: new Date(Date.now() - 1000), // already expired
         },
       });
@@ -316,7 +320,7 @@ describe('Auth (e2e)', () => {
     it('should always return success message for forgot password', async () => {
       const res = await request(app.getHttpServer())
         .post('/auth/password/forgot')
-        .send({ email: 'owner@test-catering.test', tenantSlug })
+        .send({ email: TENANT_EMAIL, tenantSlug: TENANT_SLUG })
         .expect(201);
 
       expect(res.body.message).toBeDefined();
@@ -326,11 +330,11 @@ describe('Auth (e2e)', () => {
       // Trigger forgot password to generate a token
       await request(app.getHttpServer())
         .post('/auth/password/forgot')
-        .send({ email: 'owner@test-catering.test', tenantSlug });
+        .send({ email: TENANT_EMAIL, tenantSlug: TENANT_SLUG });
 
       // Fetch the reset token from the database
       const user = await prisma.tenantUser.findFirst({
-        where: { email: 'owner@test-catering.test', tenant: { slug: tenantSlug } },
+        where: { email: TENANT_EMAIL, tenant: { slug: TENANT_SLUG } },
       });
 
       expect(user?.resetToken).toBeDefined();
@@ -344,14 +348,14 @@ describe('Auth (e2e)', () => {
 
       // Should be able to sign in with new password
       await request(app.getHttpServer())
-        .post(`/auth/sign-in/${tenantSlug}`)
-        .send({ email: 'owner@test-catering.test', password: 'new-tenant-pass-456' })
+        .post(`/auth/sign-in/${TENANT_SLUG}`)
+        .send({ email: TENANT_EMAIL, password: 'new-tenant-pass-456' })
         .expect(201);
 
       // Old password should fail
       await request(app.getHttpServer())
-        .post(`/auth/sign-in/${tenantSlug}`)
-        .send({ email: 'owner@test-catering.test', password: 'tenant-pass-123' })
+        .post(`/auth/sign-in/${TENANT_SLUG}`)
+        .send({ email: TENANT_EMAIL, password: 'tenant-pass-123' })
         .expect(401);
     });
 

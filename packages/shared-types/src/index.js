@@ -110,4 +110,36 @@ export const authenticatedRequestContextSchema = z.discriminatedUnion("scope", [
     authenticatedPlatformContextSchema,
     authenticatedTenantContextSchema,
 ]);
+export const createTenantRequestSchema = z.object({
+    slug: tenantSlugSchema,
+    displayName: z.string().min(1).max(160),
+    settings: z.object({
+        timezone: z.string().min(1).max(64).optional(),
+        currencyCode: z.string().length(3).optional(),
+        locale: z.string().min(2).max(16).optional(),
+    }).optional(),
+});
+export const updateTenantRequestSchema = z.object({
+    displayName: z.string().min(1).max(160).optional(),
+    settings: z.object({
+        timezone: z.string().min(1).max(64).optional(),
+        currencyCode: z.string().length(3).optional(),
+        locale: z.string().min(2).max(16).optional(),
+    }).optional(),
+});
+export const tenantDetailSchema = z.object({
+    id: tenantIdSchema,
+    slug: tenantSlugSchema,
+    displayName: z.string().min(1).max(160),
+    status: tenantStatusSchema,
+    settings: tenantSettingsSchema.nullable(),
+    userCount: z.number().int().nonnegative(),
+    createdAt: z.string().datetime(),
+    updatedAt: z.string().datetime(),
+});
+export const tenantListResponseSchema = z.object({
+    data: z.array(tenantSummarySchema.extend({ userCount: z.number().int().nonnegative() })),
+    total: z.number().int().nonnegative(),
+});
+export const tenantLifecycleActionSchema = z.enum(["activate", "suspend", "archive"]);
 //# sourceMappingURL=index.js.map

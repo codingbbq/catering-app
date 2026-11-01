@@ -241,3 +241,66 @@ export type AuthSession = z.infer<typeof authSessionSchema>;
 export type AuthenticatedPlatformContext = z.infer<typeof authenticatedPlatformContextSchema>;
 export type AuthenticatedTenantContext = z.infer<typeof authenticatedTenantContextSchema>;
 export type AuthenticatedRequestContext = z.infer<typeof authenticatedRequestContextSchema>;
+export declare const createTenantRequestSchema: z.ZodObject<{
+    slug: z.ZodString;
+    displayName: z.ZodString;
+    settings: z.ZodOptional<z.ZodObject<{
+        timezone: z.ZodOptional<z.ZodString>;
+        currencyCode: z.ZodOptional<z.ZodString>;
+        locale: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
+export declare const updateTenantRequestSchema: z.ZodObject<{
+    displayName: z.ZodOptional<z.ZodString>;
+    settings: z.ZodOptional<z.ZodObject<{
+        timezone: z.ZodOptional<z.ZodString>;
+        currencyCode: z.ZodOptional<z.ZodString>;
+        locale: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
+export declare const tenantDetailSchema: z.ZodObject<{
+    id: z.ZodString;
+    slug: z.ZodString;
+    displayName: z.ZodString;
+    status: z.ZodEnum<{
+        onboarding: "onboarding";
+        active: "active";
+        suspended: "suspended";
+        archived: "archived";
+    }>;
+    settings: z.ZodNullable<z.ZodObject<{
+        tenantId: z.ZodString;
+        timezone: z.ZodString;
+        currencyCode: z.ZodString;
+        locale: z.ZodString;
+    }, z.core.$strip>>;
+    userCount: z.ZodNumber;
+    createdAt: z.ZodString;
+    updatedAt: z.ZodString;
+}, z.core.$strip>;
+export declare const tenantListResponseSchema: z.ZodObject<{
+    data: z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        slug: z.ZodString;
+        displayName: z.ZodString;
+        status: z.ZodEnum<{
+            onboarding: "onboarding";
+            active: "active";
+            suspended: "suspended";
+            archived: "archived";
+        }>;
+        createdAt: z.ZodString;
+        userCount: z.ZodNumber;
+    }, z.core.$strip>>;
+    total: z.ZodNumber;
+}, z.core.$strip>;
+export declare const tenantLifecycleActionSchema: z.ZodEnum<{
+    activate: "activate";
+    suspend: "suspend";
+    archive: "archive";
+}>;
+export type CreateTenantRequest = z.infer<typeof createTenantRequestSchema>;
+export type UpdateTenantRequest = z.infer<typeof updateTenantRequestSchema>;
+export type TenantDetail = z.infer<typeof tenantDetailSchema>;
+export type TenantListResponse = z.infer<typeof tenantListResponseSchema>;
+export type TenantLifecycleAction = z.infer<typeof tenantLifecycleActionSchema>;
