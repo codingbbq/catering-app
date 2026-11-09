@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { AccessContextBadge } from '@/features/tenancy/access-context-badge';
+import { TenantNav } from '@/features/tenancy/tenant-nav';
 import { UserNav } from '@/features/auth/user-nav';
 
 export default async function TenantLayout({
@@ -25,6 +26,7 @@ export default async function TenantLayout({
           <UserNav signInHref={`/tenant/${tenantSlug}/sign-in`} />
         </div>
       </header>
+      <TenantNav tenantSlug={tenantSlug} />
       <main className="flex flex-1 px-6 py-10">
         <div className="mx-auto w-full max-w-6xl">{children}</div>
       </main>

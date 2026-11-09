@@ -304,3 +304,221 @@ export type UpdateTenantRequest = z.infer<typeof updateTenantRequestSchema>;
 export type TenantDetail = z.infer<typeof tenantDetailSchema>;
 export type TenantListResponse = z.infer<typeof tenantListResponseSchema>;
 export type TenantLifecycleAction = z.infer<typeof tenantLifecycleActionSchema>;
+export declare const tenantProfileSchema: z.ZodObject<{
+    id: z.ZodString;
+    slug: z.ZodString;
+    displayName: z.ZodString;
+    status: z.ZodEnum<{
+        onboarding: "onboarding";
+        active: "active";
+        suspended: "suspended";
+        archived: "archived";
+    }>;
+    settings: z.ZodNullable<z.ZodObject<{
+        tenantId: z.ZodString;
+        timezone: z.ZodString;
+        currencyCode: z.ZodString;
+        locale: z.ZodString;
+    }, z.core.$strip>>;
+    createdAt: z.ZodString;
+    updatedAt: z.ZodString;
+}, z.core.$strip>;
+export declare const updateTenantProfileSchema: z.ZodObject<{
+    displayName: z.ZodOptional<z.ZodString>;
+    settings: z.ZodOptional<z.ZodObject<{
+        timezone: z.ZodOptional<z.ZodString>;
+        currencyCode: z.ZodOptional<z.ZodString>;
+        locale: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
+export declare const tenantUserItemSchema: z.ZodObject<{
+    id: z.ZodString;
+    email: z.ZodString;
+    displayName: z.ZodString;
+    role: z.ZodEnum<{
+        owner: "owner";
+        admin: "admin";
+        manager: "manager";
+        staff: "staff";
+    }>;
+    isActive: z.ZodBoolean;
+    createdAt: z.ZodString;
+}, z.core.$strip>;
+export declare const tenantUserListResponseSchema: z.ZodObject<{
+    data: z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        email: z.ZodString;
+        displayName: z.ZodString;
+        role: z.ZodEnum<{
+            owner: "owner";
+            admin: "admin";
+            manager: "manager";
+            staff: "staff";
+        }>;
+        isActive: z.ZodBoolean;
+        createdAt: z.ZodString;
+    }, z.core.$strip>>;
+    total: z.ZodNumber;
+}, z.core.$strip>;
+export declare const createInvitationRequestSchema: z.ZodObject<{
+    email: z.ZodString;
+    role: z.ZodEnum<{
+        owner: "owner";
+        admin: "admin";
+        manager: "manager";
+        staff: "staff";
+    }>;
+}, z.core.$strip>;
+export declare const invitationItemSchema: z.ZodObject<{
+    id: z.ZodString;
+    email: z.ZodString;
+    role: z.ZodEnum<{
+        owner: "owner";
+        admin: "admin";
+        manager: "manager";
+        staff: "staff";
+    }>;
+    status: z.ZodEnum<{
+        pending: "pending";
+        accepted: "accepted";
+        expired: "expired";
+        revoked: "revoked";
+    }>;
+    expiresAt: z.ZodString;
+    createdAt: z.ZodString;
+}, z.core.$strip>;
+export declare const invitationListResponseSchema: z.ZodObject<{
+    data: z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        email: z.ZodString;
+        role: z.ZodEnum<{
+            owner: "owner";
+            admin: "admin";
+            manager: "manager";
+            staff: "staff";
+        }>;
+        status: z.ZodEnum<{
+            pending: "pending";
+            accepted: "accepted";
+            expired: "expired";
+            revoked: "revoked";
+        }>;
+        expiresAt: z.ZodString;
+        createdAt: z.ZodString;
+    }, z.core.$strip>>;
+    total: z.ZodNumber;
+}, z.core.$strip>;
+export declare const updateTenantUserRoleSchema: z.ZodObject<{
+    role: z.ZodEnum<{
+        owner: "owner";
+        admin: "admin";
+        manager: "manager";
+        staff: "staff";
+    }>;
+}, z.core.$strip>;
+export type TenantProfile = z.infer<typeof tenantProfileSchema>;
+export type UpdateTenantProfile = z.infer<typeof updateTenantProfileSchema>;
+export type TenantUserItem = z.infer<typeof tenantUserItemSchema>;
+export type TenantUserListResponse = z.infer<typeof tenantUserListResponseSchema>;
+export type CreateInvitationRequest = z.infer<typeof createInvitationRequestSchema>;
+export type InvitationItem = z.infer<typeof invitationItemSchema>;
+export type InvitationListResponse = z.infer<typeof invitationListResponseSchema>;
+export type UpdateTenantUserRole = z.infer<typeof updateTenantUserRoleSchema>;
+export declare const customerContactSchema: z.ZodObject<{
+    id: z.ZodString;
+    name: z.ZodString;
+    email: z.ZodNullable<z.ZodString>;
+    phone: z.ZodNullable<z.ZodString>;
+    role: z.ZodNullable<z.ZodString>;
+    isPrimary: z.ZodBoolean;
+    createdAt: z.ZodString;
+    updatedAt: z.ZodString;
+}, z.core.$strip>;
+export declare const customerItemSchema: z.ZodObject<{
+    id: z.ZodString;
+    name: z.ZodString;
+    email: z.ZodNullable<z.ZodString>;
+    phone: z.ZodNullable<z.ZodString>;
+    isActive: z.ZodBoolean;
+    contactCount: z.ZodNumber;
+    createdAt: z.ZodString;
+}, z.core.$strip>;
+export declare const customerDetailSchema: z.ZodObject<{
+    id: z.ZodString;
+    name: z.ZodString;
+    email: z.ZodNullable<z.ZodString>;
+    phone: z.ZodNullable<z.ZodString>;
+    isActive: z.ZodBoolean;
+    contactCount: z.ZodNumber;
+    createdAt: z.ZodString;
+    address: z.ZodNullable<z.ZodString>;
+    notes: z.ZodNullable<z.ZodString>;
+    contacts: z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        name: z.ZodString;
+        email: z.ZodNullable<z.ZodString>;
+        phone: z.ZodNullable<z.ZodString>;
+        role: z.ZodNullable<z.ZodString>;
+        isPrimary: z.ZodBoolean;
+        createdAt: z.ZodString;
+        updatedAt: z.ZodString;
+    }, z.core.$strip>>;
+    updatedAt: z.ZodString;
+}, z.core.$strip>;
+export declare const customerListResponseSchema: z.ZodObject<{
+    data: z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        name: z.ZodString;
+        email: z.ZodNullable<z.ZodString>;
+        phone: z.ZodNullable<z.ZodString>;
+        isActive: z.ZodBoolean;
+        contactCount: z.ZodNumber;
+        createdAt: z.ZodString;
+    }, z.core.$strip>>;
+    total: z.ZodNumber;
+}, z.core.$strip>;
+export declare const createCustomerRequestSchema: z.ZodObject<{
+    name: z.ZodString;
+    email: z.ZodOptional<z.ZodString>;
+    phone: z.ZodOptional<z.ZodString>;
+    address: z.ZodOptional<z.ZodString>;
+    notes: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>;
+export declare const updateCustomerRequestSchema: z.ZodObject<{
+    name: z.ZodOptional<z.ZodString>;
+    email: z.ZodOptional<z.ZodString>;
+    phone: z.ZodOptional<z.ZodString>;
+    address: z.ZodOptional<z.ZodString>;
+    notes: z.ZodOptional<z.ZodString>;
+    isActive: z.ZodOptional<z.ZodBoolean>;
+}, z.core.$strip>;
+export declare const createContactRequestSchema: z.ZodObject<{
+    name: z.ZodString;
+    email: z.ZodOptional<z.ZodString>;
+    phone: z.ZodOptional<z.ZodString>;
+    role: z.ZodOptional<z.ZodString>;
+    isPrimary: z.ZodOptional<z.ZodBoolean>;
+}, z.core.$strip>;
+export declare const updateContactRequestSchema: z.ZodObject<{
+    name: z.ZodOptional<z.ZodString>;
+    email: z.ZodOptional<z.ZodString>;
+    phone: z.ZodOptional<z.ZodString>;
+    role: z.ZodOptional<z.ZodString>;
+    isPrimary: z.ZodOptional<z.ZodBoolean>;
+}, z.core.$strip>;
+export declare const customerSearchParamsSchema: z.ZodObject<{
+    search: z.ZodOptional<z.ZodString>;
+    isActive: z.ZodOptional<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>>;
+}, z.core.$strip>;
+export type CustomerContact = z.infer<typeof customerContactSchema>;
+export type CustomerItem = z.infer<typeof customerItemSchema>;
+export type CustomerDetail = z.infer<typeof customerDetailSchema>;
+export type CustomerListResponse = z.infer<typeof customerListResponseSchema>;
+export type CreateCustomerRequest = z.infer<typeof createCustomerRequestSchema>;
+export type UpdateCustomerRequest = z.infer<typeof updateCustomerRequestSchema>;
+export type CreateContactRequest = z.infer<typeof createContactRequestSchema>;
+export type UpdateContactRequest = z.infer<typeof updateContactRequestSchema>;
+export type CustomerSearchParams = z.infer<typeof customerSearchParamsSchema>;

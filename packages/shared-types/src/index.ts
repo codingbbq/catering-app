@@ -210,3 +210,153 @@ export type UpdateTenantRequest = z.infer<typeof updateTenantRequestSchema>;
 export type TenantDetail = z.infer<typeof tenantDetailSchema>;
 export type TenantListResponse = z.infer<typeof tenantListResponseSchema>;
 export type TenantLifecycleAction = z.infer<typeof tenantLifecycleActionSchema>;
+
+// --- TEN-001: Tenant Administration and User Management ---
+
+export const tenantProfileSchema = z.object({
+  id: tenantIdSchema,
+  slug: tenantSlugSchema,
+  displayName: z.string().min(1).max(160),
+  status: tenantStatusSchema,
+  settings: tenantSettingsSchema.nullable(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export const updateTenantProfileSchema = z.object({
+  displayName: z.string().min(1).max(160).optional(),
+  settings: z.object({
+    timezone: z.string().min(1).max(64).optional(),
+    currencyCode: z.string().length(3).optional(),
+    locale: z.string().min(2).max(16).optional(),
+  }).optional(),
+});
+
+export const tenantUserItemSchema = z.object({
+  id: z.string().uuid(),
+  email: z.string().email(),
+  displayName: z.string(),
+  role: tenantRoleSchema,
+  isActive: z.boolean(),
+  createdAt: z.string().datetime(),
+});
+
+export const tenantUserListResponseSchema = z.object({
+  data: z.array(tenantUserItemSchema),
+  total: z.number().int().nonnegative(),
+});
+
+export const createInvitationRequestSchema = z.object({
+  email: z.string().email(),
+  role: tenantRoleSchema,
+});
+
+export const invitationItemSchema = z.object({
+  id: z.string().uuid(),
+  email: z.string().email(),
+  role: tenantRoleSchema,
+  status: invitationStatusSchema,
+  expiresAt: z.string().datetime(),
+  createdAt: z.string().datetime(),
+});
+
+export const invitationListResponseSchema = z.object({
+  data: z.array(invitationItemSchema),
+  total: z.number().int().nonnegative(),
+});
+
+export const updateTenantUserRoleSchema = z.object({
+  role: tenantRoleSchema,
+});
+
+export type TenantProfile = z.infer<typeof tenantProfileSchema>;
+export type UpdateTenantProfile = z.infer<typeof updateTenantProfileSchema>;
+export type TenantUserItem = z.infer<typeof tenantUserItemSchema>;
+export type TenantUserListResponse = z.infer<typeof tenantUserListResponseSchema>;
+export type CreateInvitationRequest = z.infer<typeof createInvitationRequestSchema>;
+export type InvitationItem = z.infer<typeof invitationItemSchema>;
+export type InvitationListResponse = z.infer<typeof invitationListResponseSchema>;
+export type UpdateTenantUserRole = z.infer<typeof updateTenantUserRoleSchema>;
+
+// --- CRM-001: Customer Management ---
+
+export const customerContactSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(160),
+  email: z.string().email().nullable(),
+  phone: z.string().max(32).nullable(),
+  role: z.string().max(80).nullable(),
+  isPrimary: z.boolean(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export const customerItemSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(200),
+  email: z.string().email().nullable(),
+  phone: z.string().max(32).nullable(),
+  isActive: z.boolean(),
+  contactCount: z.number().int().nonnegative(),
+  createdAt: z.string().datetime(),
+});
+
+export const customerDetailSchema = customerItemSchema.extend({
+  address: z.string().nullable(),
+  notes: z.string().nullable(),
+  contacts: z.array(customerContactSchema),
+  updatedAt: z.string().datetime(),
+});
+
+export const customerListResponseSchema = z.object({
+  data: z.array(customerItemSchema),
+  total: z.number().int().nonnegative(),
+});
+
+export const createCustomerRequestSchema = z.object({
+  name: z.string().min(1).max(200),
+  email: z.string().email().optional(),
+  phone: z.string().max(32).optional(),
+  address: z.string().max(500).optional(),
+  notes: z.string().max(2000).optional(),
+});
+
+export const updateCustomerRequestSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  email: z.string().email().optional(),
+  phone: z.string().max(32).optional(),
+  address: z.string().max(500).optional(),
+  notes: z.string().max(2000).optional(),
+  isActive: z.boolean().optional(),
+});
+
+export const createContactRequestSchema = z.object({
+  name: z.string().min(1).max(160),
+  email: z.string().email().optional(),
+  phone: z.string().max(32).optional(),
+  role: z.string().max(80).optional(),
+  isPrimary: z.boolean().optional(),
+});
+
+export const updateContactRequestSchema = z.object({
+  name: z.string().min(1).max(160).optional(),
+  email: z.string().email().optional(),
+  phone: z.string().max(32).optional(),
+  role: z.string().max(80).optional(),
+  isPrimary: z.boolean().optional(),
+});
+
+export const customerSearchParamsSchema = z.object({
+  search: z.string().optional(),
+  isActive: z.enum(["true", "false"]).optional(),
+});
+
+export type CustomerContact = z.infer<typeof customerContactSchema>;
+export type CustomerItem = z.infer<typeof customerItemSchema>;
+export type CustomerDetail = z.infer<typeof customerDetailSchema>;
+export type CustomerListResponse = z.infer<typeof customerListResponseSchema>;
+export type CreateCustomerRequest = z.infer<typeof createCustomerRequestSchema>;
+export type UpdateCustomerRequest = z.infer<typeof updateCustomerRequestSchema>;
+export type CreateContactRequest = z.infer<typeof createContactRequestSchema>;
+export type UpdateContactRequest = z.infer<typeof updateContactRequestSchema>;
+export type CustomerSearchParams = z.infer<typeof customerSearchParamsSchema>;
