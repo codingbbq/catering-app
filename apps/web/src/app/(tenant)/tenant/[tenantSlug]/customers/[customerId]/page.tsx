@@ -13,6 +13,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { EnquiryStatusBadge } from "@/features/enquiries/enquiry-status-badge";
 import { ContactForm } from "@/features/customers/contact-form";
 import { ContactTable } from "@/features/customers/contact-table";
 import { CustomerForm } from "@/features/customers/customer-form";
@@ -22,6 +23,7 @@ import {
   updateCustomer,
   updateCustomerContact,
 } from "@/lib/customers-api";
+import { listEnquiries } from "@/lib/enquiries-api";
 import { useAuth } from "@/providers/auth-provider";
 
 export default function CustomerDetailPage() {
@@ -45,6 +47,12 @@ export default function CustomerDetailPage() {
   } = useQuery({
     queryKey,
     queryFn: () => getCustomer(customerId, accessToken!),
+    enabled: isAuthenticated && isTenant && !!accessToken && !!customerId,
+  });
+
+  const { data: enquiriesData } = useQuery({
+    queryKey: ["tenant", tenantSlug, "customer-enquiries", customerId],
+    queryFn: () => listEnquiries(accessToken!, { customerId }),
     enabled: isAuthenticated && isTenant && !!accessToken && !!customerId,
   });
 
@@ -274,6 +282,57 @@ export default function CustomerDetailPage() {
                 }}
                 isActionPending={updateContactMutation.isPending}
               />
+            </CardContent>
+          </Card>
+
+          {/* Enquiries Section */}
+          <Card>
+            <CardHeader className="flex items-center justify-between">
+              <div>
+                <CardTitle>Sales Enquiries</CardTitle>
+                <CardDescription>Event proposals and meal order opportunities for this client.</CardDescription>
+              </div>
+              <Link
+                href={`/tenant/${tenantSlug}/enquiries/new?customerId=${customer.id}`}
+                className="inline-flex items-center gap-1 rounded bg-[#171717] px-2.5 py-1 text-xs font-medium text-white hover:bg-[#262626] transition-colors"
+              >
+                + New Enquiry
+              </Link>
+            </CardHeader>
+            <CardContent>
+              {enquiriesData?.data && enquiriesData.data.length > 0 ? (
+                <div className="divide-y divide-[#F0F0F0]">
+                  {enquiriesData.data.map((enq) => (
+                    <div key={enq.id} className="py-2.5 flex items-center justify-between gap-3">
+                      <div>
+                        <Link
+                          href={`/tenant/${tenantSlug}/enquiries/${enq.id}`}
+                          className="font-medium text-xs text-[#171717] hover:underline"
+                        >
+                          {enq.title}
+                        </Link>
+                        <div className="text-[11px] text-[#737373]">
+                          {enq.eventDate ? `Date: ${new Date(enq.eventDate).toLocaleDateString()}` : "No date set"}
+                          {enq.guestCount ? ` • ${enq.guestCount} pax` : ""}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <EnquiryStatusBadge status={enq.status} />
+                        <Link
+                          href={`/tenant/${tenantSlug}/enquiries/${enq.id}`}
+                          className="rounded border border-[#E5E5E5] px-2 py-0.5 text-xs text-[#262626] hover:bg-[#FAFAFA]"
+                        >
+                          Open
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-6 text-center text-xs text-[#737373]">
+                  No enquiries logged for this customer yet.
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

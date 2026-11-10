@@ -360,3 +360,126 @@ export type UpdateCustomerRequest = z.infer<typeof updateCustomerRequestSchema>;
 export type CreateContactRequest = z.infer<typeof createContactRequestSchema>;
 export type UpdateContactRequest = z.infer<typeof updateContactRequestSchema>;
 export type CustomerSearchParams = z.infer<typeof customerSearchParamsSchema>;
+
+// --- CRM-002: Enquiry Management ---
+
+export const enquiryStatusSchema = z.enum([
+  "new",
+  "qualified",
+  "proposal_sent",
+  "converted",
+  "lost",
+  "cancelled",
+]);
+
+export const serviceTypeSchema = z.enum([
+  "event_catering",
+  "daily_meals",
+  "other",
+]);
+
+export const activityTypeSchema = z.enum([
+  "note",
+  "call",
+  "email",
+  "meeting",
+  "status_change",
+]);
+
+export const enquiryActivityItemSchema = z.object({
+  id: z.string().uuid(),
+  enquiryId: z.string().uuid(),
+  type: activityTypeSchema,
+  content: z.string(),
+  authorId: z.string().nullable(),
+  authorName: z.string().nullable(),
+  createdAt: z.string().datetime(),
+});
+
+export const enquiryItemSchema = z.object({
+  id: z.string().uuid(),
+  customerId: z.string().uuid(),
+  customerName: z.string(),
+  title: z.string().min(1).max(200),
+  status: enquiryStatusSchema,
+  serviceType: serviceTypeSchema,
+  eventDate: z.string().nullable(),
+  guestCount: z.number().int().positive().nullable(),
+  estimatedBudget: z.number().nonnegative().nullable(),
+  assignedToId: z.string().nullable(),
+  assignedToName: z.string().nullable(),
+  nextAction: z.string().nullable(),
+  nextActionDate: z.string().nullable(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export const enquiryDetailSchema = enquiryItemSchema.extend({
+  eventType: z.string().nullable(),
+  venue: z.string().nullable(),
+  notes: z.string().nullable(),
+  lostReason: z.string().nullable(),
+  customerEmail: z.string().nullable(),
+  customerPhone: z.string().nullable(),
+  activities: z.array(enquiryActivityItemSchema),
+});
+
+export const enquiryListResponseSchema = z.object({
+  data: z.array(enquiryItemSchema),
+  total: z.number().int().nonnegative(),
+});
+
+export const createEnquiryRequestSchema = z.object({
+  customerId: z.string().uuid(),
+  title: z.string().min(1).max(200),
+  serviceType: serviceTypeSchema.default("event_catering"),
+  eventDate: z.string().optional(),
+  guestCount: z.number().int().positive().optional(),
+  eventType: z.string().max(100).optional(),
+  venue: z.string().max(250).optional(),
+  estimatedBudget: z.number().nonnegative().optional(),
+  notes: z.string().max(5000).optional(),
+  assignedToId: z.string().uuid().optional(),
+  nextAction: z.string().max(200).optional(),
+  nextActionDate: z.string().optional(),
+});
+
+export const updateEnquiryRequestSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  serviceType: serviceTypeSchema.optional(),
+  status: enquiryStatusSchema.optional(),
+  eventDate: z.string().nullable().optional(),
+  guestCount: z.number().int().positive().nullable().optional(),
+  eventType: z.string().max(100).nullable().optional(),
+  venue: z.string().max(250).nullable().optional(),
+  estimatedBudget: z.number().nonnegative().nullable().optional(),
+  notes: z.string().max(5000).nullable().optional(),
+  assignedToId: z.string().uuid().nullable().optional(),
+  nextAction: z.string().max(200).nullable().optional(),
+  nextActionDate: z.string().nullable().optional(),
+  lostReason: z.string().max(500).nullable().optional(),
+});
+
+export const createEnquiryActivityRequestSchema = z.object({
+  type: activityTypeSchema.default("note"),
+  content: z.string().min(1).max(2000),
+});
+
+export const enquirySearchParamsSchema = z.object({
+  search: z.string().optional(),
+  status: enquiryStatusSchema.optional(),
+  customerId: z.string().uuid().optional(),
+  serviceType: serviceTypeSchema.optional(),
+});
+
+export type EnquiryStatus = z.infer<typeof enquiryStatusSchema>;
+export type ServiceType = z.infer<typeof serviceTypeSchema>;
+export type ActivityType = z.infer<typeof activityTypeSchema>;
+export type EnquiryActivityItem = z.infer<typeof enquiryActivityItemSchema>;
+export type EnquiryItem = z.infer<typeof enquiryItemSchema>;
+export type EnquiryDetail = z.infer<typeof enquiryDetailSchema>;
+export type EnquiryListResponse = z.infer<typeof enquiryListResponseSchema>;
+export type CreateEnquiryRequest = z.infer<typeof createEnquiryRequestSchema>;
+export type UpdateEnquiryRequest = z.infer<typeof updateEnquiryRequestSchema>;
+export type CreateEnquiryActivityRequest = z.infer<typeof createEnquiryActivityRequestSchema>;
+export type EnquirySearchParams = z.infer<typeof enquirySearchParamsSchema>;

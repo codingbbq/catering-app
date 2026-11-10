@@ -2,12 +2,12 @@
 
 | Feature ID | Feature name | Priority | Dependencies | Implementation status | Specification |
 | --- | --- | --- | --- | --- | --- |
-| FND-001 | Tenant Isolation Foundation | Critical | None | NOT_STARTED | [FND-001](./01-FND-001-tenant-isolation-foundation.md) |
-| IAM-001 | Authentication and Session Management | Critical | FND-001 | NOT_STARTED | [IAM-001](./02-IAM-001-authentication-and-session-management.md) |
-| PLT-001 | Super Admin Console | Critical | FND-001, IAM-001 | NOT_STARTED | [PLT-001](./03-PLT-001-super-admin-console.md) |
-| TEN-001 | Tenant Administration and User Management | Critical | FND-001, IAM-001, PLT-001 | NOT_STARTED | [TEN-001](./04-TEN-001-tenant-lifecycle-and-admin.md) |
-| CRM-001 | Customer Management | High | FND-001, IAM-001, TEN-001 | NOT_STARTED | [CRM-001](./05-CRM-001-customer-management.md) |
-| CRM-002 | Enquiry Management | High | CRM-001 | NOT_STARTED | [CRM-002](./06-CRM-002-enquiry-management.md) |
+| FND-001 | Tenant Isolation Foundation | Critical | None | COMPLETED | [FND-001](./01-FND-001-tenant-isolation-foundation.md) |
+| IAM-001 | Authentication and Session Management | Critical | FND-001 | COMPLETED | [IAM-001](./02-IAM-001-authentication-and-session-management.md) |
+| PLT-001 | Super Admin Console | Critical | FND-001, IAM-001 | COMPLETED | [PLT-001](./03-PLT-001-super-admin-console.md) |
+| TEN-001 | Tenant Administration and User Management | Critical | FND-001, IAM-001, PLT-001 | COMPLETED | [TEN-001](./04-TEN-001-tenant-lifecycle-and-admin.md) |
+| CRM-001 | Customer Management | High | FND-001, IAM-001, TEN-001 | COMPLETED | [CRM-001](./05-CRM-001-customer-management.md) |
+| CRM-002 | Enquiry Management | High | CRM-001 | COMPLETED | [CRM-002](./06-CRM-002-enquiry-management.md) |
 | CAT-001 | Food Catalogue and Catalogue Import | High | TEN-001 | NOT_STARTED | [CAT-001](./07-CAT-001-food-catalogue-and-import.md) |
 | MEN-001 | Menu Builder | High | CAT-001 | NOT_STARTED | [MEN-001](./08-MEN-001-menu-builder.md) |
 | CST-001 | Costing Engine | Critical | CAT-001, MEN-001 | NOT_STARTED | [CST-001](./09-CST-001-costing-engine.md) |

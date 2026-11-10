@@ -33,6 +33,7 @@ model Tenant {
   users       TenantUser[]
   invitations UserInvitation[]
   customers   Customer[]
+  enquiries   Enquiry[]
   auditLogs   AuditLog[]
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
@@ -90,6 +91,7 @@ model TenantUser {
   tenantId        String
   tenant          Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   sessions        Session[]
+  assignedEnquiries Enquiry[]
   invitedBy       String?
   resetToken      String?     @unique
   resetTokenExpiry DateTime?
@@ -164,6 +166,7 @@ model Customer {
   notes       String?
   isActive    Boolean           @default(true)
   contacts    CustomerContact[]
+  enquiries   Enquiry[]
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
@@ -185,4 +188,73 @@ model CustomerContact {
   updatedAt  DateTime @updatedAt
 
   @@index([customerId])
+}
+
+
+// --- CRM-002: Enquiry Management ---
+
+enum EnquiryStatus {
+  new
+  qualified
+  proposal_sent
+  converted
+  lost
+  cancelled
+}
+
+enum ServiceType {
+  event_catering
+  daily_meals
+  other
+}
+
+enum ActivityType {
+  note
+  call
+  email
+  meeting
+  status_change
+}
+
+model Enquiry {
+  id              String            @id @default(uuid())
+  tenantId        String
+  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId      String
+  customer        Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  title           String
+  status          EnquiryStatus     @default(new)
+  serviceType     ServiceType       @default(event_catering)
+  eventDate       DateTime?
+  guestCount      Int?
+  eventType       String?
+  venue           String?
+  estimatedBudget Decimal?          @db.Decimal(12, 2)
+  notes           String?
+  nextAction      String?
+  nextActionDate  DateTime?
+  lostReason      String?
+  assignedToId    String?
+  assignedTo      TenantUser?       @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  activities      EnquiryActivity[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, customerId])
+  @@index([tenantId, eventDate])
+}
+
+model EnquiryActivity {
+  id         String       @id @default(uuid())
+  enquiryId  String
+  enquiry    Enquiry      @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+  type       ActivityType @default(note)
+  content    String
+  authorId   String?
+  authorName String?
+  createdAt  DateTime     @default(now())
+
+  @@index([enquiryId, createdAt])
 }

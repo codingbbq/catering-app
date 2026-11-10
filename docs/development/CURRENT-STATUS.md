@@ -2,16 +2,20 @@
 
 ## Current development phase
 
-- Phase 0: Project foundation and engineering conventions
+- Phase 1: Commercial Sales Workflow MVP
 
 ## Current feature
 
-- None in active implementation yet
-- Project is currently at scaffold-and-plan stage only
+- `CRM-002` Enquiry Management (Completed)
 
 ## Completed features
 
-- None
+- `FND-001` Tenant Isolation Foundation
+- `IAM-001` Authentication and Session Management
+- `PLT-001` Super Admin Console
+- `TEN-001` Tenant Administration and User Management
+- `CRM-001` Customer Management
+- `CRM-002` Enquiry Management
 
 ## Features in progress
 
@@ -19,32 +23,17 @@
 
 ## Blocked features
 
-- None currently blocked at the product-planning level
+- None
 
 ## Next recommended feature
 
-- `FND-001` Tenant Isolation Foundation
-
-## Important unresolved decisions
-
-- authentication approach and session strategy
-- exact tenant/user identity model across multiple tenants
-- whether pilot tenants need multi-branch/location support
-- quotation approval workflow before customer send, if any
-- tax, invoice numbering, and currency rules
-- scope and timing of daily meal orders in the first pilot
-- first communication providers for WhatsApp, email, and SMS
-- first-release depth for recipe costing, unit conversions, and yield/wastage modeling
+- `CAT-001` Food Catalogue and Catalogue Import
 
 ## Current implementation baseline
 
-- pnpm workspace monorepo scaffold exists
-- Next.js frontend scaffold exists
-- NestJS backend scaffold exists
-- Prisma/PostgreSQL baseline configuration exists
-- shared types and shared config packages exist
-- no business-domain features have been implemented yet
-
-## Immediate recommendation
-
-Start with `FND-001`, then `IAM-001`, before any business-domain UI or API feature work begins.
+- pnpm workspace monorepo configured
+- Next.js 16 frontend with DaisyUI v5 executive monochrome theme
+- NestJS backend with tenant-scoped controllers, services, guards, and audit logging
+- Prisma/PostgreSQL schema with Tenant, User, Customer, and Enquiry models
+- Shared contracts and Zod schemas in `@catering/shared-types`
+- Customer and Enquiry CRUD, timeline activities, status transitions, and qualification flows complete

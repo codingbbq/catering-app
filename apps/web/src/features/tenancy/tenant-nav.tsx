@@ -22,6 +22,11 @@ export function TenantNav({ tenantSlug }: TenantNavProps) {
       exact: false,
     },
     {
+      href: `/tenant/${tenantSlug}/enquiries`,
+      label: "Enquiries",
+      exact: false,
+    },
+    {
       href: `/tenant/${tenantSlug}/users`,
       label: "Team & Users",
       exact: false,
