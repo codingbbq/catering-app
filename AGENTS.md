@@ -2,97 +2,75 @@
 
 ## Project Context
 
-This is a multi-tenant Catering Management SaaS
-for managing customers, enquiries, menus, quotations,
-bookings, invoicing, payments, daily meal orders,
-inventory and reporting.
+This is a multi-tenant Catering Management SaaS for managing customers, enquiries, menus, food catalogues, costing, quotations, bookings, invoicing, payments, daily meal orders, inventory, and operational reporting.
 
-The application must feel like professional,
-enterprise-grade business software.
+The application must feel like professional, enterprise-grade business software used by established catering companies for daily operations.
 
 ## Technology Stack
 
-- Frontend: Next.js, React, TypeScript
-- Styling: Tailwind CSS and DaisyUI
-- Forms: TanStack Form and Zod
-- Data fetching: TanStack Query
-- Backend: NestJS
-- Database: PostgreSQL with Prisma
+- **Frontend**: Next.js 16 (App Router), React 19, TypeScript
+- **Styling**: Tailwind CSS v4 and DaisyUI v5 (Executive Monochrome theme)
+- **State & Data Fetching**: TanStack Query v5
+- **Forms & Validation**: TanStack Form and Zod
+- **Data Tables**: TanStack Table v8
+- **Backend**: NestJS, TypeScript
+- **Database**: PostgreSQL with Prisma ORM
+- **Monorepo**: pnpm workspaces (`apps/web`, `apps/api`, `packages/shared-types`)
 
-Inspect installed versions before making changes.
+Inspect installed versions before proposing or making changes.
 
-## Mandatory Design Rules
+## Architecture & Multi-Tenancy Rules
 
-1. Follow docs/design-system/UI-GUIDELINES.md.
-2. Use the Executive Monochrome design system.
-3. Primary UI colours must be neutral.
-4. Do not introduce pink, purple, bright blue,
-   decorative gradients or colourful cards.
-5. Use DaisyUI components and semantic theme tokens.
-6. Reuse existing shared components.
-7. Maintain consistent spacing, typography,
-   borders and responsive behaviour.
-8. Use colour only when it conveys business meaning.
-9. Maintain accessible contrast and focus states.
-10. Do not redesign unrelated pages.
+- **Tenant Isolation**: Row-level isolation must be preserved across all tenant data access queries. Never expose cross-tenant records.
+- **Platform vs. Tenant Separation**: Keep platform Super Admin permissions and routes (`/platform/*`) strictly separate from tenant-level permissions and routes (`/tenant/[tenantSlug]/*`).
+- **Shared Package Boundaries**: Reusable DTOs, enums, interfaces, and shared validation schemas belong in `packages/shared-types`. Keep shared packages framework-agnostic.
+- **Strict TypeScript**: Strict mode is enforced. Keep responsibilities explicit and files modular.
+- **API Conventions**: Follow documented REST conventions in `docs/architecture/API-CONVENTIONS.md`.
+- **Security**: Never commit secrets or hardcoded credentials.
 
-## Architecture Rules
+## Mandatory Design System Conventions
 
-- Preserve tenant isolation across all data access.
-- Keep platform Super Admin permissions separate
-  from tenant-level permissions.
-- Follow existing frontend/backend boundaries.
-- Use Zod for input validation where appropriate.
-- Do not introduce dependencies unnecessarily.
-- Do not duplicate existing business logic.
+All UI development must strictly adhere to `docs/design-system/UI-GUIDELINES.md`:
 
-## Feature Development
+1. **Executive Monochrome Theme**: The primary interface is strictly neutral (#171717 charcoal primary, #F5F5F4 page canvas, #FFFFFF card surface, #E5E5E5 border).
+2. **No Vibrant Primary Colours**: Do not use pink, purple, bright blue, or multi-coloured gradients.
+3. **Restrained Semantic Status Only**: Muted green (success), amber (warning), red (error), and neutral/stone (info/draft) may only be used to communicate real business status.
+4. **Use DaisyUI Semantic Tokens**: Theme tokens defined in `apps/web/src/app/globals.css` must be used rather than ad-hoc inline styles.
+5. **Reuse Shared Components**: Always use standardized components from `apps/web/src/components/ui/` (`StatusBadge`, `Card`, `PageHeader`, `EmptyState`) and table/form primitives.
+6. **Layout Hierarchy**: All tenant features must integrate into the responsive sidebar navigation layout in `/tenant/[tenantSlug]/*`.
+7. **Accessibility**: Maintain accessible contrast ratios, visible keyboard focus rings, and proper form labeling.
 
-Before implementing a feature:
+## Feature Development Workflow
 
-1. Read docs/product/PRD.md.
-2. Read the relevant docs/features specification.
-3. Read docs/development/CURRENT-STATUS.md.
+Before implementing any feature:
+
+1. Read `docs/product/PRD.md`.
+2. Read the relevant specification in `docs/features/`.
+3. Read `docs/development/CURRENT-STATUS.md`.
 4. Inspect existing related implementations.
-5. Identify dependencies and affected modules.
-6. Present a concise implementation plan.
+5. Identify dependencies and affected modules across `apps/web`, `apps/api`, and `packages/shared-types`.
+6. Present a concise implementation plan before making large modifications.
 7. Implement only the approved scope.
-8. Add or update relevant tests.
-9. Verify existing functionality.
+8. Add or update relevant tests and type verifications.
+9. Verify that existing functionality is not broken.
 10. Update feature documentation and status.
 
 ## Definition of Done
 
 A feature is complete only when:
 
-- Its acceptance criteria are satisfied.
-- It follows the established design system.
-- Tenant isolation and permissions are enforced.
-- Relevant validation and tests pass.
-- No unrelated functionality is broken.
-- Documentation is updated.
+- Acceptance criteria from its feature spec are satisfied.
+- Strict compliance with `docs/design-system/UI-GUIDELINES.md` is verified.
+- Tenant isolation and permission checks are enforced.
+- TypeScript checks pass cleanly with zero errors (`tsc --noEmit`).
+- No unrelated functionality or existing pages are broken.
+- Feature documentation and current status are updated.
 
-## Important
+## Authoritative Documentation
 
-Do not treat previous chat messages as the
-authoritative project specification.
+- Product Requirements: `docs/product/PRD.md`
+- UI Design System: `docs/design-system/UI-GUIDELINES.md`
+- System Architecture: `docs/architecture/SYSTEM-ARCHITECTURE.md`
+- Current Status: `docs/development/CURRENT-STATUS.md`
 
-The repository documentation and approved
-design system are the source of truth.
-
-If instructions conflict, identify the conflict
-and ask for clarification before proceeding.
-
-
-## Shared package conventions
-
-- Put reusable DTOs, enums and validation schemas in `packages/shared-types`.
-- Keep shared packages framework-agnostic unless there is a strong reason not to.
-
-## Coding standards
-
-- Use strict TypeScript.
-- Keep files small and responsibilities explicit.
-- Favor composition over inheritance.
-- Avoid hidden side effects during module initialization.
-- Never commit secrets.
+Do not treat previous chat messages as authoritative over repository documentation.
