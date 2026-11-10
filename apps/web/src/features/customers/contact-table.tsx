@@ -8,6 +8,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { useMemo } from "react";
+import { StatusBadge } from "@/components/ui/status-badge";
 
 const columnHelper = createColumnHelper<CustomerContact>();
 
@@ -27,42 +28,39 @@ export function ContactTable({
   const columns = useMemo(
     () => [
       columnHelper.accessor("name", {
-        header: "Name",
+        header: "Contact Person",
         cell: (info) => {
           const contact = info.row.original;
           return (
             <div className="flex items-center gap-2">
-              <span className="font-medium">{info.getValue()}</span>
+              <span className="font-medium text-[#171717]">{info.getValue()}</span>
               {contact.isPrimary && (
-                <span className="badge badge-primary badge-xs gap-1 font-semibold">
-                  ★ Primary
-                </span>
+                <StatusBadge variant="neutral" showDot={false} className="text-[10px] px-1.5 py-0">
+                  Primary
+                </StatusBadge>
               )}
             </div>
           );
         },
       }),
       columnHelper.accessor("role", {
-        header: "Role / Title",
+        header: "Designation / Role",
         cell: (info) => (
-          <span className="text-sm">
-            {info.getValue() ?? <span className="text-base-content/40 italic">Not set</span>}
+          <span className="text-xs text-[#262626]">
+            {info.getValue() ?? <span className="text-[#A3A3A3] italic">—</span>}
           </span>
         ),
       }),
       columnHelper.accessor("email", {
         header: "Email",
         cell: (info) => (
-          <span className="text-sm font-mono">
+          <span className="text-xs font-mono text-[#262626]">
             {info.getValue() ? (
-              <a
-                href={`mailto:${info.getValue()}`}
-                className="text-primary hover:underline"
-              >
+              <a href={`mailto:${info.getValue()}`} className="hover:underline">
                 {info.getValue()}
               </a>
             ) : (
-              <span className="text-base-content/40 italic">None</span>
+              <span className="text-[#A3A3A3] italic">—</span>
             )}
           </span>
         ),
@@ -70,16 +68,13 @@ export function ContactTable({
       columnHelper.accessor("phone", {
         header: "Phone",
         cell: (info) => (
-          <span className="text-sm">
+          <span className="text-xs text-[#262626]">
             {info.getValue() ? (
-              <a
-                href={`tel:${info.getValue()}`}
-                className="text-primary hover:underline"
-              >
+              <a href={`tel:${info.getValue()}`} className="hover:underline">
                 {info.getValue()}
               </a>
             ) : (
-              <span className="text-base-content/40 italic">None</span>
+              <span className="text-[#A3A3A3] italic">—</span>
             )}
           </span>
         ),
@@ -95,17 +90,17 @@ export function ContactTable({
                 <button
                   type="button"
                   onClick={() => onSetPrimary(contact)}
-                  className="btn btn-ghost btn-xs text-xs"
+                  className="rounded border border-[#E5E5E5] bg-white px-2 py-0.5 text-[11px] font-medium text-[#737373] hover:text-[#171717] hover:bg-[#F5F5F5] transition-colors"
                   disabled={isActionPending}
                   title="Make this the primary contact"
                 >
-                  Make primary
+                  Set Primary
                 </button>
               )}
               <button
                 type="button"
                 onClick={() => onEditContact(contact)}
-                className="btn btn-ghost btn-xs"
+                className="rounded border border-[#E5E5E5] bg-white px-2 py-0.5 text-[11px] font-medium text-[#262626] hover:bg-[#F5F5F5] transition-colors"
                 disabled={isActionPending}
               >
                 Edit
@@ -115,7 +110,7 @@ export function ContactTable({
         },
       }),
     ],
-    [onEditContact, onSetPrimary, isActionPending],
+    [isActionPending, onEditContact, onSetPrimary],
   );
 
   const table = useReactTable({
@@ -124,46 +119,45 @@ export function ContactTable({
     getCoreRowModel: getCoreRowModel(),
   });
 
-  if (data.length === 0) {
-    return (
-      <div className="rounded-xl border border-dashed border-base-300 p-8 text-center text-base-content/60">
-        <p className="font-medium">No contacts added yet</p>
-        <p className="text-xs text-base-content/50 mt-1">
-          Add the primary organizer or billing representative for this customer.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <div className="overflow-x-auto rounded-xl border border-base-200 bg-base-100">
-      <table className="table table-sm w-full">
-        <thead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id} className="bg-base-200/50">
-              {headerGroup.headers.map((header) => (
-                <th key={header.id}>
-                  {flexRender(header.column.columnDef.header, header.getContext())}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.map((row) => (
-            <tr
-              key={row.id}
-              className={`hover ${row.original.isPrimary ? "bg-primary/5" : ""}`}
-            >
-              {row.getVisibleCells().map((cell) => (
-                <td key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+    <div className="overflow-hidden rounded-lg border border-[#E5E5E5] bg-white">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse text-xs">
+          <thead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr
+                key={headerGroup.id}
+                className="border-b border-[#E5E5E5] bg-[#FAFAFA] text-[11px] font-semibold uppercase tracking-wider text-[#737373]"
+              >
+                {headerGroup.headers.map((header) => (
+                  <th key={header.id} className="py-2.5 px-4">
+                    {flexRender(header.column.columnDef.header, header.getContext())}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody className="divide-y divide-[#F0F0F0]">
+            {table.getRowModel().rows.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length} className="py-8 text-center text-xs text-[#737373]">
+                  No contacts added yet.
                 </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+              </tr>
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <tr key={row.id} className="hover:bg-[#FAFAFA] transition-colors">
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className="py-2.5 px-4">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

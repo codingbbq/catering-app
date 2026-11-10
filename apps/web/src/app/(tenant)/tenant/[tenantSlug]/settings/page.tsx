@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 import { getTenantProfile, updateTenantProfile } from "@/lib/tenant-admin-api";
 import { useAuth } from "@/providers/auth-provider";
 
@@ -52,10 +54,13 @@ export default function TenantSettingsPage() {
 
   if (!isAuthenticated || !isTenant) {
     return (
-      <div className="flex flex-col items-center gap-4 py-20">
-        <h2 className="text-xl font-semibold">Tenant access required</h2>
-        <Link href={`/tenant/${tenantSlug}/sign-in`} className="btn btn-primary btn-sm">
-          Sign in
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <h2 className="text-base font-semibold text-[#171717]">Workspace Authentication Required</h2>
+        <Link
+          href={`/tenant/${tenantSlug}/sign-in`}
+          className="mt-4 inline-flex items-center justify-center rounded bg-[#171717] px-3.5 py-1.5 text-xs font-medium text-white hover:bg-[#262626] transition-colors"
+        >
+          Sign In
         </Link>
       </div>
     );
@@ -64,151 +69,168 @@ export default function TenantSettingsPage() {
   if (isLoading) {
     return (
       <div className="flex justify-center py-20">
-        <span className="loading loading-spinner loading-lg" />
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#171717] border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <Link href={`/tenant/${tenantSlug}`} className="btn btn-ghost btn-sm mb-2">
-          &larr; Dashboard
-        </Link>
-        <h2 className="text-2xl font-semibold">Business Settings</h2>
-        <p className="text-sm text-base-content/70">
-          View and manage your tenant business profile.
-        </p>
-      </div>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <PageHeader
+        title="Business Profile &amp; Settings"
+        description="Configure your catering business identity, accounting currency, and operating timezone."
+        backHref={`/tenant/${tenantSlug}`}
+        backLabel="Back to Dashboard"
+      />
 
       {error && (
-        <div className="alert alert-error text-sm">
+        <div className="flex items-center justify-between rounded border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
           <span>{error}</span>
-          <button className="btn btn-ghost btn-xs" onClick={() => setError("")}>Dismiss</button>
+          <button
+            type="button"
+            className="text-xs font-medium underline hover:no-underline"
+            onClick={() => setError("")}
+          >
+            Dismiss
+          </button>
         </div>
       )}
 
-      <div className="card bg-base-100 shadow">
-        <div className="card-body">
+      <Card>
+        <CardHeader className="flex items-center justify-between">
+          <div>
+            <CardTitle>Business Configuration</CardTitle>
+            <CardDescription>Primary operating parameters for quotations and invoices.</CardDescription>
+          </div>
+          {isAdmin && !editMode && (
+            <button
+              type="button"
+              className="rounded border border-[#E5E5E5] bg-white px-2.5 py-1 text-xs font-medium text-[#262626] hover:bg-[#F5F5F5] transition-colors"
+              onClick={() => setEditMode(true)}
+            >
+              Edit Settings
+            </button>
+          )}
+        </CardHeader>
+
+        <CardContent>
           {editMode ? (
             <form
-              onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }}
+              onSubmit={(e) => {
+                e.preventDefault();
+                mutation.mutate();
+              }}
               className="space-y-4"
             >
-              <fieldset className="fieldset">
-                <label className="fieldset-label" htmlFor="displayName">Display name</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="edit-display-name">
+                  Business Display Name
+                </label>
                 <input
-                  id="displayName"
+                  id="edit-display-name"
                   type="text"
-                  className="input input-bordered w-full"
+                  className="w-full rounded border border-[#E5E5E5] bg-white px-3 py-2 text-sm text-[#262626] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717]"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   required
                 />
-              </fieldset>
+              </div>
 
               <div className="grid gap-4 sm:grid-cols-3">
-                <fieldset className="fieldset">
-                  <label className="fieldset-label" htmlFor="timezone">Timezone</label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="edit-timezone">
+                    Operating Timezone
+                  </label>
                   <input
-                    id="timezone"
+                    id="edit-timezone"
                     type="text"
-                    className="input input-bordered w-full"
+                    className="w-full rounded border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#262626] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717]"
                     value={timezone}
                     onChange={(e) => setTimezone(e.target.value)}
                   />
-                </fieldset>
-                <fieldset className="fieldset">
-                  <label className="fieldset-label" htmlFor="currency">Currency</label>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="edit-currency">
+                    Billing Currency
+                  </label>
                   <input
-                    id="currency"
+                    id="edit-currency"
                     type="text"
-                    className="input input-bordered w-full"
+                    className="w-full rounded border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#262626] uppercase font-mono focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717]"
                     value={currencyCode}
                     onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())}
                     maxLength={3}
                   />
-                </fieldset>
-                <fieldset className="fieldset">
-                  <label className="fieldset-label" htmlFor="locale">Locale</label>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="edit-locale-code">
+                    Locale Formatting
+                  </label>
                   <input
-                    id="locale"
+                    id="edit-locale-code"
                     type="text"
-                    className="input input-bordered w-full"
+                    className="w-full rounded border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#262626] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717]"
                     value={locale}
                     onChange={(e) => setLocale(e.target.value)}
                   />
-                </fieldset>
+                </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#F0F0F0]">
                 <button
                   type="button"
-                  className="btn btn-ghost btn-sm"
+                  className="rounded border border-[#E5E5E5] bg-white px-3.5 py-1.5 text-xs font-medium text-[#262626] hover:bg-[#F5F5F5] transition-colors"
                   onClick={() => {
                     setEditMode(false);
-                    if (profile) {
-                      setDisplayName(profile.displayName);
-                      setTimezone(profile.settings?.timezone ?? "UTC");
-                      setCurrencyCode(profile.settings?.currencyCode ?? "USD");
-                      setLocale(profile.settings?.locale ?? "en");
-                    }
+                    setDisplayName(profile?.displayName ?? "");
+                    setTimezone(profile?.settings?.timezone ?? "UTC");
+                    setCurrencyCode(profile?.settings?.currencyCode ?? "USD");
+                    setLocale(profile?.settings?.locale ?? "en");
                   }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary btn-sm"
+                  className="rounded bg-[#171717] px-4 py-1.5 text-xs font-medium text-white hover:bg-[#262626] transition-colors disabled:opacity-50"
                   disabled={mutation.isPending}
                 >
-                  {mutation.isPending ? (
-                    <span className="loading loading-spinner loading-sm" />
-                  ) : (
-                    "Save changes"
-                  )}
+                  {mutation.isPending ? "Saving..." : "Save Settings"}
                 </button>
               </div>
             </form>
           ) : (
-            <>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <p className="text-xs font-medium uppercase text-base-content/50">Display Name</p>
-                  <p className="text-sm">{profile?.displayName}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase text-base-content/50">Slug</p>
-                  <p className="font-mono text-sm">{profile?.slug}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase text-base-content/50">Status</p>
-                  <p className="text-sm">{profile?.status}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase text-base-content/50">Timezone</p>
-                  <p className="text-sm">{profile?.settings?.timezone ?? "—"}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase text-base-content/50">Currency</p>
-                  <p className="text-sm">{profile?.settings?.currencyCode ?? "—"}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase text-base-content/50">Locale</p>
-                  <p className="text-sm">{profile?.settings?.locale ?? "—"}</p>
-                </div>
+            <div className="grid gap-4 sm:grid-cols-2 text-xs">
+              <div className="space-y-1">
+                <span className="font-semibold uppercase text-[10px] tracking-wider text-[#737373]">
+                  Workspace Slug
+                </span>
+                <p className="font-mono text-[#262626]">{tenantSlug}</p>
               </div>
-              {isAdmin && (
-                <div className="card-actions justify-end pt-2">
-                  <button className="btn btn-ghost btn-sm" onClick={() => setEditMode(true)}>
-                    Edit
-                  </button>
-                </div>
-              )}
-            </>
+              <div className="space-y-1">
+                <span className="font-semibold uppercase text-[10px] tracking-wider text-[#737373]">
+                  Operating Currency
+                </span>
+                <p className="font-mono text-[#262626] font-semibold">
+                  {profile?.settings?.currencyCode ?? "USD"}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <span className="font-semibold uppercase text-[10px] tracking-wider text-[#737373]">
+                  Timezone
+                </span>
+                <p className="text-[#262626]">{profile?.settings?.timezone ?? "UTC"}</p>
+              </div>
+              <div className="space-y-1">
+                <span className="font-semibold uppercase text-[10px] tracking-wider text-[#737373]">
+                  Locale
+                </span>
+                <p className="text-[#262626]">{profile?.settings?.locale ?? "en"}</p>
+              </div>
+            </div>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

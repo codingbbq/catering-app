@@ -1,14 +1,21 @@
+import { StatusBadge } from "@/components/ui/status-badge";
+
 type AccessContextBadgeProps = {
-  scope: 'platform' | 'tenant';
+  scope: "platform" | "tenant";
   tenantSlug?: string | undefined;
 };
 
 export function AccessContextBadge({ scope, tenantSlug }: AccessContextBadgeProps) {
-  const label = scope === 'platform' ? 'Platform Context' : `Tenant Context${tenantSlug ? `: ${tenantSlug}` : ''}`;
-  const className =
-    scope === 'platform'
-      ? 'badge badge-secondary badge-outline'
-      : 'badge badge-primary badge-outline';
+  const label =
+    scope === "platform"
+      ? "Platform Super Admin"
+      : tenantSlug
+        ? `Tenant: ${tenantSlug}`
+        : "Tenant Workspace";
 
-  return <span className={className}>{label}</span>;
+  return (
+    <StatusBadge variant={scope === "platform" ? "neutral" : "info"} showDot={true}>
+      {label}
+    </StatusBadge>
+  );
 }

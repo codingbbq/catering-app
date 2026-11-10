@@ -69,32 +69,36 @@ export function ContactForm({
                 if (!value || value.trim().length === 0) {
                   return "Contact name is required.";
                 }
-                if (value.length > 160) {
-                  return "Contact name cannot exceed 160 characters.";
+                if (value.length > 200) {
+                  return "Contact name cannot exceed 200 characters.";
                 }
                 return undefined;
               },
             }}
           >
             {(field) => (
-              <div className="form-control w-full">
-                <label className="label" htmlFor="contact-name">
-                  <span className="label-text font-medium">Contact Person Name *</span>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="contact-name">
+                  Full Name *
                 </label>
                 <input
                   id="contact-name"
                   type="text"
-                  className={`input input-bordered w-full ${field.state.meta.errors.length > 0 ? "input-error" : ""}`}
-                  placeholder="e.g. Jane Doe"
+                  className={`w-full rounded border bg-white px-3 py-2 text-sm text-[#262626] placeholder-[#A3A3A3] focus:outline-none focus:ring-1 ${
+                    field.state.meta.errors.length > 0
+                      ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500"
+                      : "border-[#E5E5E5] focus:border-[#171717] focus:ring-[#171717]"
+                  }`}
+                  placeholder="e.g. Michael Chang"
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                   required
                 />
                 {field.state.meta.errors.length > 0 && (
-                  <span className="text-error text-xs mt-1">
+                  <p className="text-[11px] text-rose-600">
                     {field.state.meta.errors.map((err) => String(err)).join(", ")}
-                  </span>
+                  </p>
                 )}
               </div>
             )}
@@ -102,36 +106,79 @@ export function ContactForm({
         </div>
 
         {/* Role */}
-        <div>
+        <div className="sm:col-span-2">
           <form.Field
             name="role"
             validators={{
               onChange: ({ value }) => {
-                if (value && value.length > 80) {
-                  return "Role cannot exceed 80 characters.";
-                }
+                if (!value) return undefined;
+                if (value.length > 100) return "Role cannot exceed 100 characters.";
                 return undefined;
               },
             }}
           >
             {(field) => (
-              <div className="form-control w-full">
-                <label className="label" htmlFor="contact-role">
-                  <span className="label-text font-medium">Role / Title</span>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="contact-role">
+                  Role / Designation
                 </label>
                 <input
                   id="contact-role"
                   type="text"
-                  className={`input input-bordered w-full ${field.state.meta.errors.length > 0 ? "input-error" : ""}`}
-                  placeholder="e.g. Event Coordinator, Bride, Billing"
+                  className={`w-full rounded border bg-white px-3 py-2 text-sm text-[#262626] placeholder-[#A3A3A3] focus:outline-none focus:ring-1 ${
+                    field.state.meta.errors.length > 0
+                      ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500"
+                      : "border-[#E5E5E5] focus:border-[#171717] focus:ring-[#171717]"
+                  }`}
+                  placeholder="e.g. Event Coordinator, Bride, Purchasing Manager"
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                 />
                 {field.state.meta.errors.length > 0 && (
-                  <span className="text-error text-xs mt-1">
+                  <p className="text-[11px] text-rose-600">
                     {field.state.meta.errors.map((err) => String(err)).join(", ")}
-                  </span>
+                  </p>
+                )}
+              </div>
+            )}
+          </form.Field>
+        </div>
+
+        {/* Email */}
+        <div>
+          <form.Field
+            name="email"
+            validators={{
+              onChange: ({ value }) => {
+                if (!value || value.trim() === "") return undefined;
+                const result = z.string().email().safeParse(value.trim());
+                return result.success ? undefined : "Please enter a valid email address.";
+              },
+            }}
+          >
+            {(field) => (
+              <div className="space-y-1">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="contact-email">
+                  Direct Email
+                </label>
+                <input
+                  id="contact-email"
+                  type="email"
+                  className={`w-full rounded border bg-white px-3 py-2 text-sm text-[#262626] placeholder-[#A3A3A3] focus:outline-none focus:ring-1 ${
+                    field.state.meta.errors.length > 0
+                      ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500"
+                      : "border-[#E5E5E5] focus:border-[#171717] focus:ring-[#171717]"
+                  }`}
+                  placeholder="michael@company.com"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                />
+                {field.state.meta.errors.length > 0 && (
+                  <p className="text-[11px] text-rose-600">
+                    {field.state.meta.errors.map((err) => String(err)).join(", ")}
+                  </p>
                 )}
               </div>
             )}
@@ -151,59 +198,27 @@ export function ContactForm({
             }}
           >
             {(field) => (
-              <div className="form-control w-full">
-                <label className="label" htmlFor="contact-phone">
-                  <span className="label-text font-medium">Phone Number</span>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="contact-phone">
+                  Direct Phone
                 </label>
                 <input
                   id="contact-phone"
                   type="tel"
-                  className={`input input-bordered w-full ${field.state.meta.errors.length > 0 ? "input-error" : ""}`}
+                  className={`w-full rounded border bg-white px-3 py-2 text-sm text-[#262626] placeholder-[#A3A3A3] focus:outline-none focus:ring-1 ${
+                    field.state.meta.errors.length > 0
+                      ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500"
+                      : "border-[#E5E5E5] focus:border-[#171717] focus:ring-[#171717]"
+                  }`}
                   placeholder="+1 (555) 987-6543"
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                 />
                 {field.state.meta.errors.length > 0 && (
-                  <span className="text-error text-xs mt-1">
+                  <p className="text-[11px] text-rose-600">
                     {field.state.meta.errors.map((err) => String(err)).join(", ")}
-                  </span>
-                )}
-              </div>
-            )}
-          </form.Field>
-        </div>
-
-        {/* Email */}
-        <div className="sm:col-span-2">
-          <form.Field
-            name="email"
-            validators={{
-              onChange: ({ value }) => {
-                if (!value || value.trim() === "") return undefined;
-                const result = z.string().email().safeParse(value.trim());
-                return result.success ? undefined : "Please enter a valid email address.";
-              },
-            }}
-          >
-            {(field) => (
-              <div className="form-control w-full">
-                <label className="label" htmlFor="contact-email">
-                  <span className="label-text font-medium">Direct Email</span>
-                </label>
-                <input
-                  id="contact-email"
-                  type="email"
-                  className={`input input-bordered w-full ${field.state.meta.errors.length > 0 ? "input-error" : ""}`}
-                  placeholder="jane.doe@example.com"
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-                {field.state.meta.errors.length > 0 && (
-                  <span className="text-error text-xs mt-1">
-                    {field.state.meta.errors.map((err) => String(err)).join(", ")}
-                  </span>
+                  </p>
                 )}
               </div>
             )}
@@ -211,37 +226,37 @@ export function ContactForm({
         </div>
 
         {/* Primary Contact Toggle */}
-        <div className="sm:col-span-2">
+        <div className="sm:col-span-2 rounded border border-[#E5E5E5] bg-[#FAFAFA] p-3">
           <form.Field name="isPrimary">
             {(field) => (
-              <div className="form-control">
-                <label className="label cursor-pointer justify-start gap-3">
-                  <input
-                    type="checkbox"
-                    className="checkbox checkbox-primary"
-                    checked={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.checked)}
-                  />
-                  <span className="label-text font-medium">Mark as Primary Contact</span>
-                </label>
-                <p className="text-xs text-base-content/60 ml-9">
-                  The primary contact is the default recipient for quotation emails and bookings.
-                </p>
-              </div>
+              <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 rounded border-[#E5E5E5] text-[#171717] focus:ring-[#171717]"
+                  checked={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.checked)}
+                />
+                <div>
+                  <span className="text-xs font-semibold text-[#171717]">Primary Account Contact</span>
+                  <p className="text-[11px] text-[#737373] mt-0.5">
+                    Designated as default recipient for quotations, event confirmations, and invoices.
+                  </p>
+                </div>
+              </label>
             )}
           </form.Field>
         </div>
       </div>
 
-      {/* Action buttons */}
+      {/* Form Action Buttons */}
       <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
         {([canSubmit, isSubmitting]) => (
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-base-200">
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#F0F0F0]">
             {onCancel && (
               <button
                 type="button"
                 onClick={onCancel}
-                className="btn btn-ghost btn-sm"
+                className="rounded border border-[#E5E5E5] bg-white px-3.5 py-1.5 text-xs font-medium text-[#262626] hover:bg-[#F5F5F5] transition-colors"
                 disabled={Boolean(isSubmitting) || isPending}
               >
                 Cancel
@@ -249,17 +264,12 @@ export function ContactForm({
             )}
             <button
               type="submit"
-              className="btn btn-primary btn-sm"
+              className="rounded bg-[#171717] px-4 py-1.5 text-xs font-medium text-white hover:bg-[#262626] transition-colors disabled:opacity-50"
               disabled={!canSubmit || Boolean(isSubmitting) || isPending}
             >
-              {isSubmitting || isPending ? (
-                <>
-                  <span className="loading loading-spinner loading-xs" />
-                  Saving...
-                </>
-              ) : (
-                submitLabel ?? (isEdit ? "Update Contact" : "Add Contact")
-              )}
+              {isSubmitting || isPending
+                ? "Saving..."
+                : submitLabel ?? (isEdit ? "Update Contact" : "Add Contact")}
             </button>
           </div>
         )}

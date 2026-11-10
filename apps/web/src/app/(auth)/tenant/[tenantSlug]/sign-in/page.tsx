@@ -4,6 +4,7 @@ import type { AuthSession } from "@catering/shared-types";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { tenantSignIn } from "@/lib/auth-api";
 import { useAuth } from "@/providers/auth-provider";
 
@@ -42,61 +43,70 @@ export default function TenantSignInPage() {
   }
 
   return (
-    <div className="card w-full max-w-md bg-base-100 shadow-xl">
-      <div className="card-body">
-        <h1 className="card-title text-2xl">Tenant Sign In</h1>
-        <p className="text-sm text-base-content/70">
-          Signing in to <span className="font-semibold">{tenantSlug}</span>
-        </p>
+    <Card>
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-xl font-bold">Tenant Sign In</CardTitle>
+        <CardDescription>
+          Accessing workspace: <span className="font-semibold text-[#171717]">{tenantSlug}</span>
+        </CardDescription>
+      </CardHeader>
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="alert alert-error text-sm">
-              <span>{error}</span>
+            <div className="rounded border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+              {error}
             </div>
           )}
 
-          <fieldset className="fieldset">
-            <label className="fieldset-label" htmlFor="email">Email</label>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="email">
+              Email Address
+            </label>
             <input
               id="email"
               type="email"
-              className="input input-bordered w-full"
-              placeholder="you@example.com"
+              className="w-full rounded border border-[#E5E5E5] bg-white px-3 py-2 text-sm text-[#262626] placeholder-[#A3A3A3] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717]"
+              placeholder="operator@company.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-          </fieldset>
+          </div>
 
-          <fieldset className="fieldset">
-            <label className="fieldset-label" htmlFor="password">Password</label>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="password">
+                Password
+              </label>
+              <Link
+                href={`/tenant/${tenantSlug}/forgot-password`}
+                className="text-xs text-[#737373] hover:text-[#171717] transition-colors"
+              >
+                Forgot?
+              </Link>
+            </div>
             <input
               id="password"
               type="password"
-              className="input input-bordered w-full"
-              placeholder="Enter your password"
+              className="w-full rounded border border-[#E5E5E5] bg-white px-3 py-2 text-sm text-[#262626] placeholder-[#A3A3A3] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717]"
+              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
             />
-          </fieldset>
-
-          <button type="submit" className="btn btn-primary w-full" disabled={loading}>
-            {loading ? <span className="loading loading-spinner loading-sm" /> : "Sign In"}
-          </button>
-
-          <div className="text-center text-sm">
-            <Link
-              href={`/tenant/${tenantSlug}/forgot-password`}
-              className="link link-hover text-base-content/70"
-            >
-              Forgot password?
-            </Link>
           </div>
+
+          <button
+            type="submit"
+            className="w-full rounded bg-[#171717] py-2 text-xs font-medium text-white hover:bg-[#262626] transition-colors disabled:opacity-50"
+            disabled={loading}
+          >
+            {loading ? "Authenticating..." : "Sign In to Workspace"}
+          </button>
         </form>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

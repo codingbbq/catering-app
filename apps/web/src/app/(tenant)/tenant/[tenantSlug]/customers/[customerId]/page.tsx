@@ -10,6 +10,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { ContactForm } from "@/features/customers/contact-form";
 import { ContactTable } from "@/features/customers/contact-table";
 import { CustomerForm } from "@/features/customers/customer-form";
@@ -84,10 +87,13 @@ export default function CustomerDetailPage() {
 
   if (!isAuthenticated || !isTenant) {
     return (
-      <div className="flex flex-col items-center gap-4 py-20">
-        <h2 className="text-xl font-semibold">Tenant access required</h2>
-        <Link href={`/tenant/${tenantSlug}/sign-in`} className="btn btn-primary btn-sm">
-          Sign in
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <h2 className="text-base font-semibold text-[#171717]">Workspace Authentication Required</h2>
+        <Link
+          href={`/tenant/${tenantSlug}/sign-in`}
+          className="mt-4 inline-flex items-center justify-center rounded bg-[#171717] px-3.5 py-1.5 text-xs font-medium text-white hover:bg-[#262626] transition-colors"
+        >
+          Sign In
         </Link>
       </div>
     );
@@ -95,24 +101,31 @@ export default function CustomerDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 py-20">
-        <span className="loading loading-spinner loading-md text-primary" />
-        <p className="text-sm text-base-content/60">Loading customer details...</p>
+      <div className="flex flex-col items-center justify-center gap-2 py-20">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#171717] border-t-transparent" />
+        <p className="text-xs text-[#737373]">Loading customer profile...</p>
       </div>
     );
   }
 
   if (isError || !customer) {
     return (
-      <div className="max-w-xl mx-auto space-y-4 py-12 text-center">
-        <div className="alert alert-error text-sm">
-          <span>{error instanceof Error ? error.message : "Customer not found."}</span>
+      <div className="mx-auto max-w-md py-16 text-center space-y-3">
+        <div className="rounded border border-rose-200 bg-rose-50 p-3.5 text-xs text-rose-800">
+          {error instanceof Error ? error.message : "Customer not found."}
         </div>
-        <div className="flex items-center justify-center gap-3">
-          <button type="button" className="btn btn-outline btn-sm" onClick={() => void refetch()}>
+        <div className="flex items-center justify-center gap-2 pt-2">
+          <button
+            type="button"
+            className="rounded border border-[#E5E5E5] bg-white px-3 py-1.5 text-xs font-medium text-[#262626] hover:bg-[#F5F5F5]"
+            onClick={() => void refetch()}
+          >
             Retry
           </button>
-          <Link href={`/tenant/${tenantSlug}/customers`} className="btn btn-primary btn-sm">
+          <Link
+            href={`/tenant/${tenantSlug}/customers`}
+            className="rounded bg-[#171717] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#262626]"
+          >
             &larr; Back to Customers
           </Link>
         </div>
@@ -122,40 +135,28 @@ export default function CustomerDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Breadcrumb & Page Header */}
-      <div>
-        <Link
-          href={`/tenant/${tenantSlug}/customers`}
-          className="btn btn-ghost btn-sm -ml-2 mb-2 gap-1 text-base-content/70"
-        >
-          &larr; Back to Customers
-        </Link>
-
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold">{customer.name}</h2>
-            <span
-              className={`badge badge-sm ${
-                customer.isActive
-                  ? "badge-success text-success-content"
-                  : "badge-ghost opacity-60"
-              }`}
-            >
-              {customer.isActive ? "Active" : "Inactive"}
-            </span>
-          </div>
-
+      <PageHeader
+        title={customer.name}
+        description="Client account details, communication records, and associated contact persons."
+        backHref={`/tenant/${tenantSlug}/customers`}
+        backLabel="Back to Customers"
+        badge={
+          <StatusBadge variant={customer.isActive ? "success" : "neutral"}>
+            {customer.isActive ? "Active Account" : "Inactive Account"}
+          </StatusBadge>
+        }
+        actions={
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="btn btn-sm btn-outline"
+              className="rounded border border-[#E5E5E5] bg-white px-3 py-1.5 text-xs font-medium text-[#262626] hover:bg-[#F5F5F5] transition-colors"
               onClick={() => setIsEditingCustomer(true)}
             >
-              Edit Customer
+              Edit Account
             </button>
             <button
               type="button"
-              className={`btn btn-sm ${customer.isActive ? "btn-ghost text-error" : "btn-success btn-outline"}`}
+              className="rounded border border-[#E5E5E5] bg-white px-3 py-1.5 text-xs font-medium text-[#737373] hover:text-[#171717] hover:bg-[#F5F5F5] transition-colors disabled:opacity-50"
               onClick={() => {
                 setErrorMessage(null);
                 updateCustomerMutation.mutate({ isActive: !customer.isActive });
@@ -165,16 +166,16 @@ export default function CustomerDetailPage() {
               {customer.isActive ? "Deactivate" : "Reactivate"}
             </button>
           </div>
-        </div>
-      </div>
+        }
+      />
 
-      {/* Error Banner */}
+      {/* Error Alert */}
       {errorMessage && (
-        <div className="alert alert-error text-sm">
+        <div className="flex items-center justify-between rounded border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
           <span>{errorMessage}</span>
           <button
             type="button"
-            className="btn btn-ghost btn-xs"
+            className="text-xs font-medium underline hover:no-underline"
             onClick={() => setErrorMessage(null)}
           >
             Dismiss
@@ -182,164 +183,155 @@ export default function CustomerDetailPage() {
         </div>
       )}
 
-      {/* Customer Overview Grid */}
-      <div className="grid gap-6 md:grid-cols-3">
-        {/* Left Column: Account Information */}
-        <div className="md:col-span-2 space-y-6">
-          <div className="card bg-base-100 shadow-sm border border-base-200">
-            <div className="card-body p-6">
-              <h3 className="text-base font-semibold border-b border-base-200 pb-3">
-                Account Details
-              </h3>
-
-              <div className="grid gap-4 sm:grid-cols-2 pt-2">
+      {/* Grid Layout */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Main Details (2 cols) */}
+        <div className="lg:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Account Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 sm:grid-cols-2 text-xs">
                 <div>
-                  <div className="text-xs font-semibold text-base-content/60 uppercase tracking-wider">
+                  <span className="font-semibold uppercase text-[10px] tracking-wider text-[#737373]">
                     Main Email
-                  </div>
-                  <div className="mt-1 text-sm font-mono">
+                  </span>
+                  <div className="mt-1 font-mono text-sm text-[#262626]">
                     {customer.email ? (
-                      <a href={`mailto:${customer.email}`} className="text-primary hover:underline">
+                      <a href={`mailto:${customer.email}`} className="hover:underline">
                         {customer.email}
                       </a>
                     ) : (
-                      <span className="text-base-content/40 italic">Not provided</span>
+                      <span className="text-[#A3A3A3] italic">—</span>
                     )}
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-xs font-semibold text-base-content/60 uppercase tracking-wider">
+                  <span className="font-semibold uppercase text-[10px] tracking-wider text-[#737373]">
                     Main Phone
-                  </div>
-                  <div className="mt-1 text-sm">
+                  </span>
+                  <div className="mt-1 text-sm text-[#262626]">
                     {customer.phone ? (
-                      <a href={`tel:${customer.phone}`} className="text-primary hover:underline">
+                      <a href={`tel:${customer.phone}`} className="hover:underline">
                         {customer.phone}
                       </a>
                     ) : (
-                      <span className="text-base-content/40 italic">Not provided</span>
+                      <span className="text-[#A3A3A3] italic">—</span>
                     )}
                   </div>
                 </div>
 
-                <div className="sm:col-span-2">
-                  <div className="text-xs font-semibold text-base-content/60 uppercase tracking-wider">
+                <div className="sm:col-span-2 pt-2 border-t border-[#F0F0F0]">
+                  <span className="font-semibold uppercase text-[10px] tracking-wider text-[#737373]">
                     Address
-                  </div>
-                  <div className="mt-1 text-sm whitespace-pre-line">
-                    {customer.address || (
-                      <span className="text-base-content/40 italic">Not provided</span>
-                    )}
+                  </span>
+                  <div className="mt-1 text-xs text-[#262626] whitespace-pre-line">
+                    {customer.address || <span className="text-[#A3A3A3] italic">—</span>}
                   </div>
                 </div>
 
-                <div className="sm:col-span-2">
-                  <div className="text-xs font-semibold text-base-content/60 uppercase tracking-wider">
-                    Internal Relationship Notes
-                  </div>
-                  <div className="mt-1 text-sm rounded-lg bg-base-200/50 p-3 whitespace-pre-line">
+                <div className="sm:col-span-2 pt-2 border-t border-[#F0F0F0]">
+                  <span className="font-semibold uppercase text-[10px] tracking-wider text-[#737373]">
+                    Internal Notes &amp; Preferences
+                  </span>
+                  <div className="mt-1 rounded border border-[#E5E5E5] bg-[#FAFAFA] p-3 text-xs text-[#262626] whitespace-pre-line">
                     {customer.notes || (
-                      <span className="text-base-content/40 italic">
-                        No internal notes recorded for this customer yet.
-                      </span>
+                      <span className="text-[#A3A3A3] italic">No internal relationship notes recorded.</span>
                     )}
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Contacts Section */}
-          <div className="card bg-base-100 shadow-sm border border-base-200">
-            <div className="card-body p-6">
-              <div className="flex items-center justify-between border-b border-base-200 pb-3">
-                <div>
-                  <h3 className="text-base font-semibold">Contact Persons</h3>
-                  <p className="text-xs text-base-content/60">
-                    Planners, organizers, and billing contacts representing this customer.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsAddingContact(true)}
-                  className="btn btn-primary btn-xs gap-1"
-                >
-                  + Add Contact
-                </button>
+          <Card>
+            <CardHeader className="flex items-center justify-between">
+              <div>
+                <CardTitle>Contact Persons</CardTitle>
+                <CardDescription>Planners, coordinators, and billing contacts for this account.</CardDescription>
               </div>
-
-              <div className="pt-4">
-                <ContactTable
-                  data={customer.contacts}
-                  onEditContact={(contact) => setEditingContact(contact)}
-                  onSetPrimary={(contact) => {
-                    setErrorMessage(null);
-                    updateContactMutation.mutate({
-                      contactId: contact.id,
-                      dto: { isPrimary: true },
-                    });
-                  }}
-                  isActionPending={updateContactMutation.isPending}
-                />
-              </div>
-            </div>
-          </div>
+              <button
+                type="button"
+                onClick={() => setIsAddingContact(true)}
+                className="inline-flex items-center gap-1 rounded bg-[#171717] px-2.5 py-1 text-xs font-medium text-white hover:bg-[#262626] transition-colors"
+              >
+                + Add Contact
+              </button>
+            </CardHeader>
+            <CardContent>
+              <ContactTable
+                data={customer.contacts}
+                onEditContact={(contact) => setEditingContact(contact)}
+                onSetPrimary={(contact) => {
+                  setErrorMessage(null);
+                  updateContactMutation.mutate({
+                    contactId: contact.id,
+                    dto: { isPrimary: true },
+                  });
+                }}
+                isActionPending={updateContactMutation.isPending}
+              />
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Right Column: Metadata & Quick Actions */}
+        {/* Right Sidebar Metadata */}
         <div className="space-y-6">
-          <div className="card bg-base-100 shadow-sm border border-base-200">
-            <div className="card-body p-5 space-y-3">
-              <h3 className="text-sm font-semibold border-b border-base-200 pb-2">
-                Metadata &amp; Commercial Summary
-              </h3>
-
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-base-content/60">Total Contacts</span>
-                <span className="font-semibold">{customer.contactCount}</span>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Account Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-[#737373]">Total Contacts</span>
+                <span className="font-medium text-[#171717]">{customer.contactCount}</span>
               </div>
-
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-base-content/60">Account Status</span>
-                <span className="font-semibold">{customer.isActive ? "Active" : "Inactive"}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-[#737373]">Status</span>
+                <StatusBadge variant={customer.isActive ? "success" : "neutral"} showDot={true}>
+                  {customer.isActive ? "Active" : "Inactive"}
+                </StatusBadge>
               </div>
-
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-base-content/60">Customer Since</span>
-                <span className="font-medium">
-                  {new Date(customer.createdAt).toLocaleDateString()}
+              <div className="flex justify-between items-center">
+                <span className="text-[#737373]">Customer ID</span>
+                <span className="font-mono text-[11px] text-[#737373] truncate max-w-[120px]">
+                  {customer.id}
                 </span>
               </div>
-
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-base-content/60">Last Updated</span>
-                <span className="font-medium">
-                  {new Date(customer.updatedAt).toLocaleDateString()}
-                </span>
+              <div className="flex justify-between items-center">
+                <span className="text-[#737373]">Account Created</span>
+                <span className="text-[#171717]">{new Date(customer.createdAt).toLocaleDateString()}</span>
               </div>
-            </div>
-          </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[#737373]">Last Updated</span>
+                <span className="text-[#171717]">{new Date(customer.updatedAt).toLocaleDateString()}</span>
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Quick Context Card */}
-          <div className="card bg-base-200/50 border border-base-200">
-            <div className="card-body p-5">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-base-content/70">
-                Sales Pipeline Integration
-              </h4>
-              <p className="text-xs text-base-content/70 mt-1">
-                This customer account can be linked directly when logging enquiries (CRM-002) and preparing quotations (QTN-001).
-              </p>
-            </div>
+          <div className="rounded-lg border border-[#E5E5E5] bg-white p-4 space-y-1.5">
+            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-[#737373]">
+              Operational Lifecycle
+            </h4>
+            <p className="text-xs text-[#737373] leading-relaxed">
+              This client account can be referenced across event enquiries, custom menu proposals, and catering quotations.
+            </p>
           </div>
         </div>
       </div>
 
       {/* Edit Customer Modal */}
       {isEditingCustomer && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-xl">
-            <h3 className="text-lg font-bold mb-4">Edit Customer Account</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-neutral-900/30 backdrop-blur-xs"
+            onClick={() => setIsEditingCustomer(false)}
+          />
+          <div className="relative w-full max-w-xl rounded-lg border border-[#E5E5E5] bg-white p-6 shadow-lg">
+            <h3 className="text-base font-semibold text-[#171717] mb-4">Edit Customer Account</h3>
             <CustomerForm
               initialValues={{
                 name: customer.name,
@@ -359,18 +351,18 @@ export default function CustomerDetailPage() {
               submitLabel="Save Changes"
             />
           </div>
-          <div
-            className="modal-backdrop bg-black/40"
-            onClick={() => setIsEditingCustomer(false)}
-          />
         </div>
       )}
 
       {/* Add Contact Modal */}
       {isAddingContact && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-md">
-            <h3 className="text-lg font-bold mb-4">Add Contact Person</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-neutral-900/30 backdrop-blur-xs"
+            onClick={() => setIsAddingContact(false)}
+          />
+          <div className="relative w-full max-w-md rounded-lg border border-[#E5E5E5] bg-white p-6 shadow-lg">
+            <h3 className="text-base font-semibold text-[#171717] mb-4">Add Contact Person</h3>
             <ContactForm
               initialValues={{
                 isPrimary: customer.contacts.length === 0,
@@ -384,18 +376,18 @@ export default function CustomerDetailPage() {
               submitLabel="Add Contact"
             />
           </div>
-          <div
-            className="modal-backdrop bg-black/40"
-            onClick={() => setIsAddingContact(false)}
-          />
         </div>
       )}
 
       {/* Edit Contact Modal */}
       {editingContact && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-md">
-            <h3 className="text-lg font-bold mb-4">Edit Contact Person</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-neutral-900/30 backdrop-blur-xs"
+            onClick={() => setEditingContact(null)}
+          />
+          <div className="relative w-full max-w-md rounded-lg border border-[#E5E5E5] bg-white p-6 shadow-lg">
+            <h3 className="text-base font-semibold text-[#171717] mb-4">Edit Contact Person</h3>
             <ContactForm
               initialValues={{
                 name: editingContact.name,
@@ -417,10 +409,6 @@ export default function CustomerDetailPage() {
               submitLabel="Save Contact"
             />
           </div>
-          <div
-            className="modal-backdrop bg-black/40"
-            onClick={() => setEditingContact(null)}
-          />
         </div>
       )}
     </div>

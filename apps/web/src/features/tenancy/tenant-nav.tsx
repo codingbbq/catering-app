@@ -34,8 +34,8 @@ export function TenantNav({ tenantSlug }: TenantNavProps) {
   ];
 
   return (
-    <nav className="border-b border-base-200 bg-base-100">
-      <div className="mx-auto flex w-full max-w-6xl gap-1 px-6">
+    <nav className="border-b border-[#E5E5E5] bg-white">
+      <div className="flex w-full gap-2 px-6 overflow-x-auto">
         {links.map((link) => {
           const isActive = link.exact
             ? pathname === link.href
@@ -45,10 +45,10 @@ export function TenantNav({ tenantSlug }: TenantNavProps) {
             <Link
               key={link.href}
               href={link.href}
-              className={`border-b-2 px-3 py-3 text-sm font-medium transition-colors ${
+              className={`border-b-2 px-3 py-2.5 text-xs font-medium transition-colors whitespace-nowrap ${
                 isActive
-                  ? "border-primary text-primary"
-                  : "border-transparent text-base-content/70 hover:border-base-300 hover:text-base-content"
+                  ? "border-[#171717] text-[#171717]"
+                  : "border-transparent text-[#737373] hover:border-[#E5E5E5] hover:text-[#171717]"
               }`}
             >
               {link.label}

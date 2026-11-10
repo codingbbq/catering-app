@@ -4,6 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { CustomerTable } from "@/features/customers/customer-table";
 import { listCustomers } from "@/lib/customers-api";
 import { useAuth } from "@/providers/auth-provider";
@@ -21,7 +24,8 @@ export default function CustomersPage() {
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["tenant", tenantSlug, "customers", { search: searchTerm, isActive: isActiveParam }],
-    queryFn: () => listCustomers(accessToken!, { search: searchTerm || undefined, isActive: isActiveParam }),
+    queryFn: () =>
+      listCustomers(accessToken!, { search: searchTerm || undefined, isActive: isActiveParam }),
     enabled: isAuthenticated && isTenant && !!accessToken,
   });
 
@@ -37,11 +41,14 @@ export default function CustomersPage() {
 
   if (!isAuthenticated || !isTenant) {
     return (
-      <div className="flex flex-col items-center gap-4 py-20">
-        <h2 className="text-xl font-semibold">Tenant access required</h2>
-        <p className="text-base-content/70">Sign in as a tenant user to continue.</p>
-        <Link href={`/tenant/${tenantSlug}/sign-in`} className="btn btn-primary btn-sm">
-          Sign in
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <h2 className="text-base font-semibold text-[#171717]">Workspace Authentication Required</h2>
+        <p className="mt-1 text-xs text-[#737373]">Sign in to access your customer database.</p>
+        <Link
+          href={`/tenant/${tenantSlug}/sign-in`}
+          className="mt-4 inline-flex items-center justify-center rounded bg-[#171717] px-3.5 py-1.5 text-xs font-medium text-white hover:bg-[#262626] transition-colors"
+        >
+          Sign In
         </Link>
       </div>
     );
@@ -49,139 +56,148 @@ export default function CustomersPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-semibold">Customers</h2>
-          <p className="text-sm text-base-content/70">
-            Manage your client accounts, contacts, and relationship records.
-          </p>
-        </div>
-        <Link
-          href={`/tenant/${tenantSlug}/customers/new`}
-          className="btn btn-primary btn-sm gap-2"
-        >
-          <span className="text-base leading-none">+</span> Add Customer
-        </Link>
-      </div>
+      <PageHeader
+        title="Customers &amp; Accounts"
+        description="Client database, corporate accounts, contacts, and billing profiles."
+        actions={
+          <Link
+            href={`/tenant/${tenantSlug}/customers/new`}
+            className="inline-flex items-center gap-1.5 rounded bg-[#171717] px-3.5 py-2 text-xs font-medium text-white hover:bg-[#262626] transition-colors"
+          >
+            <span className="text-sm leading-none">+</span>
+            <span>Add Customer</span>
+          </Link>
+        }
+      />
 
-      {/* Filters and Search Bar */}
-      <div className="card bg-base-100 shadow-sm border border-base-200">
-        <div className="card-body p-4 sm:p-5">
+      {/* Search & Filter Toolbar */}
+      <Card>
+        <CardContent className="p-3 sm:p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             {/* Search Input */}
             <form onSubmit={handleSearchSubmit} className="flex flex-1 items-center gap-2">
-              <div className="relative flex-1">
+              <div className="relative flex-1 max-w-md">
                 <input
                   type="text"
-                  placeholder="Search by name, email, or phone..."
+                  placeholder="Search by account name, email, or phone..."
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  className="input input-bordered input-sm w-full pr-8"
+                  className="w-full rounded border border-[#E5E5E5] bg-white py-1.5 pl-3 pr-8 text-xs text-[#262626] placeholder-[#A3A3A3] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717]"
                 />
                 {searchInput && (
                   <button
                     type="button"
                     onClick={handleClearSearch}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-base-content/50 hover:text-base-content"
-                    title="Clear search"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-[#A3A3A3] hover:text-[#171717]"
                   >
                     ✕
                   </button>
                 )}
               </div>
-              <button type="submit" className="btn btn-sm btn-outline">
+              <button
+                type="submit"
+                className="rounded border border-[#E5E5E5] bg-white px-3 py-1.5 text-xs font-medium text-[#262626] hover:bg-[#F5F5F5] transition-colors"
+              >
                 Search
               </button>
             </form>
 
-            {/* Status Filter Tabs */}
-            <div className="join self-start sm:self-auto">
+            {/* Status Filter Segmented Control */}
+            <div className="flex items-center rounded border border-[#E5E5E5] bg-[#FAFAFA] p-0.5">
               <button
                 type="button"
-                className={`btn btn-sm join-item ${statusFilter === "active" ? "btn-active btn-neutral" : "btn-ghost"}`}
                 onClick={() => setStatusFilter("active")}
+                className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+                  statusFilter === "active"
+                    ? "bg-white text-[#171717] shadow-xs"
+                    : "text-[#737373] hover:text-[#171717]"
+                }`}
               >
                 Active
               </button>
               <button
                 type="button"
-                className={`btn btn-sm join-item ${statusFilter === "inactive" ? "btn-active btn-neutral" : "btn-ghost"}`}
                 onClick={() => setStatusFilter("inactive")}
+                className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+                  statusFilter === "inactive"
+                    ? "bg-white text-[#171717] shadow-xs"
+                    : "text-[#737373] hover:text-[#171717]"
+                }`}
               >
                 Inactive
               </button>
               <button
                 type="button"
-                className={`btn btn-sm join-item ${statusFilter === "all" ? "btn-active btn-neutral" : "btn-ghost"}`}
                 onClick={() => setStatusFilter("all")}
+                className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+                  statusFilter === "all"
+                    ? "bg-white text-[#171717] shadow-xs"
+                    : "text-[#737373] hover:text-[#171717]"
+                }`}
               >
                 All
               </button>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Error Alert */}
       {isError && (
-        <div className="alert alert-error text-sm">
+        <div className="flex items-center justify-between rounded border border-rose-200 bg-rose-50 p-3.5 text-xs text-rose-800">
           <span>{error instanceof Error ? error.message : "Failed to load customers."}</span>
-          <button className="btn btn-ghost btn-xs" onClick={() => void refetch()}>
+          <button
+            type="button"
+            className="text-xs font-medium underline hover:no-underline"
+            onClick={() => void refetch()}
+          >
             Retry
           </button>
         </div>
       )}
 
-      {/* Loading Skeleton */}
+      {/* Loading State */}
       {isLoading && (
-        <div className="flex flex-col items-center justify-center gap-3 py-16">
-          <span className="loading loading-spinner loading-md text-primary" />
-          <p className="text-sm text-base-content/60">Loading customers...</p>
+        <div className="flex flex-col items-center justify-center gap-2 py-20">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#171717] border-t-transparent" />
+          <p className="text-xs text-[#737373]">Loading customer accounts...</p>
         </div>
       )}
 
-      {/* Table & Empty State */}
+      {/* Data Table or Empty State */}
       {!isLoading && data && (
         <>
           {data.data.length === 0 ? (
-            <div className="card bg-base-100 shadow-sm border border-dashed border-base-300">
-              <div className="card-body items-center py-16 text-center">
-                <div className="text-4xl mb-2">👥</div>
-                <h3 className="text-lg font-semibold">
-                  {searchTerm || statusFilter !== "active"
-                    ? "No matching customers found"
-                    : "No customers yet"}
-                </h3>
-                <p className="max-w-md text-sm text-base-content/60">
-                  {searchTerm || statusFilter !== "active"
-                    ? "Try adjusting your search criteria or filter to see more results."
-                    : "Add your first catering client or corporate account to start preparing menus and quotations."}
-                </p>
-                <div className="mt-4">
-                  {searchTerm || statusFilter !== "active" ? (
-                    <button
-                      type="button"
-                      className="btn btn-outline btn-sm"
-                      onClick={() => {
-                        setSearchInput("");
-                        setSearchTerm("");
-                        setStatusFilter("active");
-                      }}
-                    >
-                      Reset filters
-                    </button>
-                  ) : (
-                    <Link
-                      href={`/tenant/${tenantSlug}/customers/new`}
-                      className="btn btn-primary btn-sm"
-                    >
-                      Add Your First Customer
-                    </Link>
-                  )}
-                </div>
-              </div>
-            </div>
+            <EmptyState
+              title={searchTerm || statusFilter !== "active" ? "No matching records" : "No customers registered"}
+              description={
+                searchTerm || statusFilter !== "active"
+                  ? "Adjust search parameters or filter toggles to view existing accounts."
+                  : "Add your first catering client or corporate account to begin preparing quotations and bookings."
+              }
+              action={
+                searchTerm || statusFilter !== "active" ? (
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-center rounded border border-[#E5E5E5] bg-white px-3 py-1.5 text-xs font-medium text-[#262626] hover:bg-[#F5F5F5] transition-colors"
+                    onClick={() => {
+                      setSearchInput("");
+                      setSearchTerm("");
+                      setStatusFilter("active");
+                    }}
+                  >
+                    Reset Filters
+                  </button>
+                ) : (
+                  <Link
+                    href={`/tenant/${tenantSlug}/customers/new`}
+                    className="inline-flex items-center justify-center rounded bg-[#171717] px-3.5 py-1.5 text-xs font-medium text-white hover:bg-[#262626] transition-colors"
+                  >
+                    Add First Customer
+                  </Link>
+                )
+              }
+            />
           ) : (
             <CustomerTable data={data.data} tenantSlug={tenantSlug} />
           )}

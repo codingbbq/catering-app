@@ -1,7 +1,7 @@
-import type { ReactNode } from 'react';
-import { AccessContextBadge } from '@/features/tenancy/access-context-badge';
-import { TenantNav } from '@/features/tenancy/tenant-nav';
-import { UserNav } from '@/features/auth/user-nav';
+import type { ReactNode } from "react";
+import { AccessContextBadge } from "@/features/tenancy/access-context-badge";
+import { TenantSidebar } from "@/features/tenancy/tenant-sidebar";
+import { UserNav } from "@/features/auth/user-nav";
 
 export default async function TenantLayout({
   children,
@@ -13,23 +13,36 @@ export default async function TenantLayout({
   const { tenantSlug } = await params;
 
   return (
-    <div className="flex min-h-full flex-1 flex-col">
-      <header className="border-b border-base-300 bg-base-100/90 px-6 py-4 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
+    <div className="flex min-h-screen bg-[#F5F5F4]">
+      {/* Responsive Enterprise Sidebar */}
+      <TenantSidebar tenantSlug={tenantSlug} />
+
+      {/* Main Column */}
+      <div className="flex flex-1 flex-col min-w-0">
+        {/* Top Header */}
+        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-[#E5E5E5] bg-white px-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <div>
-              <p className="text-sm font-medium text-base-content/60">Catering SaaS Platform</p>
-              <h1 className="text-xl font-semibold">{tenantSlug}</h1>
+            {/* Breadcrumb / Context */}
+            <div className="flex items-center gap-2 text-xs">
+              <span className="font-medium text-[#737373]">Workspace</span>
+              <span className="text-[#A3A3A3]">/</span>
+              <span className="font-semibold text-[#171717]">{tenantSlug}</span>
             </div>
-            <AccessContextBadge scope="tenant" tenantSlug={tenantSlug} />
+            <div className="hidden sm:block">
+              <AccessContextBadge scope="tenant" tenantSlug={tenantSlug} />
+            </div>
           </div>
-          <UserNav signInHref={`/tenant/${tenantSlug}/sign-in`} />
-        </div>
-      </header>
-      <TenantNav tenantSlug={tenantSlug} />
-      <main className="flex flex-1 px-6 py-10">
-        <div className="mx-auto w-full max-w-6xl">{children}</div>
-      </main>
+
+          <div className="flex items-center gap-3">
+            <UserNav signInHref={`/tenant/${tenantSlug}/sign-in`} />
+          </div>
+        </header>
+
+        {/* Main Content Area */}
+        <main className="flex-1 p-6 sm:p-8 max-w-7xl w-full mx-auto">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

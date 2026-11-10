@@ -5,6 +5,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatusBadge, type StatusVariant } from "@/components/ui/status-badge";
 import {
   createInvitation,
   deactivateTenantUser,
@@ -15,13 +18,6 @@ import {
 import { useAuth } from "@/providers/auth-provider";
 
 const ROLES: TenantRole[] = ["owner", "admin", "manager", "staff"];
-
-const ROLE_BADGE: Record<TenantRole, string> = {
-  owner: "badge-primary",
-  admin: "badge-secondary",
-  manager: "badge-accent",
-  staff: "badge-ghost",
-};
 
 export default function TenantUsersPage() {
   const { tenantSlug } = useParams<{ tenantSlug: string }>();
@@ -56,7 +52,7 @@ export default function TenantUsersPage() {
       void queryClient.invalidateQueries({ queryKey: ["tenant", "invitations"] });
     },
     onError: (err) => {
-      setError(err instanceof Error ? err.message : "Invitation failed.");
+      setError(err instanceof Error ? err.message : "Invitation dispatch failed.");
     },
   });
 
@@ -67,7 +63,7 @@ export default function TenantUsersPage() {
       void queryClient.invalidateQueries({ queryKey: ["tenant", "users"] });
     },
     onError: (err) => {
-      setError(err instanceof Error ? err.message : "Role change failed.");
+      setError(err instanceof Error ? err.message : "Role modification failed.");
     },
   });
 
@@ -77,16 +73,19 @@ export default function TenantUsersPage() {
       void queryClient.invalidateQueries({ queryKey: ["tenant", "users"] });
     },
     onError: (err) => {
-      setError(err instanceof Error ? err.message : "Deactivation failed.");
+      setError(err instanceof Error ? err.message : "User deactivation failed.");
     },
   });
 
   if (!isAuthenticated || !isTenant) {
     return (
-      <div className="flex flex-col items-center gap-4 py-20">
-        <h2 className="text-xl font-semibold">Tenant access required</h2>
-        <Link href={`/tenant/${tenantSlug}/sign-in`} className="btn btn-primary btn-sm">
-          Sign in
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <h2 className="text-base font-semibold text-[#171717]">Workspace Authentication Required</h2>
+        <Link
+          href={`/tenant/${tenantSlug}/sign-in`}
+          className="mt-4 inline-flex items-center justify-center rounded bg-[#171717] px-3.5 py-1.5 text-xs font-medium text-white hover:bg-[#262626] transition-colors"
+        >
+          Sign In
         </Link>
       </div>
     );
@@ -94,223 +93,234 @@ export default function TenantUsersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link href={`/tenant/${tenantSlug}`} className="btn btn-ghost btn-sm mb-2">
-          &larr; Dashboard
-        </Link>
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-semibold">Team &amp; Users</h2>
-            <p className="text-sm text-base-content/70">
-              Manage team members, roles, and invitations.
-            </p>
-          </div>
-          {isAdmin && (
+      <PageHeader
+        title="Team &amp; Access Controls"
+        description="Manage catering staff, kitchen managers, event coordinators, and permission roles."
+        actions={
+          isAdmin && (
             <button
-              className="btn btn-primary btn-sm"
+              type="button"
               onClick={() => setShowInviteForm(!showInviteForm)}
+              className="inline-flex items-center gap-1.5 rounded bg-[#171717] px-3.5 py-2 text-xs font-medium text-white hover:bg-[#262626] transition-colors"
             >
-              {showInviteForm ? "Cancel" : "Invite user"}
+              <span className="text-sm leading-none">+</span>
+              <span>{showInviteForm ? "Close Invite" : "Invite Member"}</span>
             </button>
-          )}
-        </div>
-      </div>
+          )
+        }
+      />
 
       {error && (
-        <div className="alert alert-error text-sm">
+        <div className="flex items-center justify-between rounded border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
           <span>{error}</span>
-          <button className="btn btn-ghost btn-xs" onClick={() => setError("")}>Dismiss</button>
+          <button
+            type="button"
+            className="text-xs font-medium underline hover:no-underline"
+            onClick={() => setError("")}
+          >
+            Dismiss
+          </button>
         </div>
       )}
 
-      {/* Invite form */}
+      {/* Invite Member Form Card */}
       {showInviteForm && isAdmin && (
-        <div className="card bg-base-100 shadow">
-          <div className="card-body">
-            <h3 className="text-lg font-semibold">Invite a team member</h3>
+        <Card>
+          <CardHeader>
+            <CardTitle>Send Workspace Invitation</CardTitle>
+            <CardDescription>
+              Invite a new team member with pre-configured catering workspace permissions.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <form
-              onSubmit={(e) => { e.preventDefault(); inviteMutation.mutate(); }}
+              onSubmit={(e) => {
+                e.preventDefault();
+                inviteMutation.mutate();
+              }}
               className="flex flex-wrap items-end gap-3"
             >
-              <fieldset className="fieldset flex-1">
-                <label className="fieldset-label" htmlFor="inviteEmail">Email</label>
+              <div className="flex-1 min-w-[240px] space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="invite-email">
+                  Staff Email Address
+                </label>
                 <input
-                  id="inviteEmail"
+                  id="invite-email"
                   type="email"
-                  className="input input-bordered w-full"
-                  placeholder="colleague@example.com"
+                  className="w-full rounded border border-[#E5E5E5] bg-white px-3 py-1.5 text-xs text-[#262626] placeholder-[#A3A3A3] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717]"
+                  placeholder="colleague@catering.com"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   required
                 />
-              </fieldset>
-              <fieldset className="fieldset w-40">
-                <label className="fieldset-label" htmlFor="inviteRole">Role</label>
+              </div>
+
+              <div className="w-40 space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="invite-role">
+                  Permission Role
+                </label>
                 <select
-                  id="inviteRole"
-                  className="select select-bordered w-full"
+                  id="invite-role"
+                  className="w-full rounded border border-[#E5E5E5] bg-white px-2.5 py-1.5 text-xs text-[#262626] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717]"
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value as TenantRole)}
                 >
                   {ROLES.filter((r) => isOwner || r !== "owner").map((r) => (
-                    <option key={r} value={r}>{r}</option>
+                    <option key={r} value={r}>
+                      {r.charAt(0).toUpperCase() + r.slice(1)}
+                    </option>
                   ))}
                 </select>
-              </fieldset>
+              </div>
+
               <button
                 type="submit"
-                className="btn btn-primary btn-sm"
+                className="rounded bg-[#171717] px-4 py-1.5 text-xs font-medium text-white hover:bg-[#262626] transition-colors disabled:opacity-50"
                 disabled={inviteMutation.isPending}
               >
-                {inviteMutation.isPending ? (
-                  <span className="loading loading-spinner loading-sm" />
-                ) : (
-                  "Send invitation"
-                )}
+                {inviteMutation.isPending ? "Sending..." : "Send Invitation"}
               </button>
             </form>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
-      {/* User list */}
+      {/* Users Table Card */}
       {usersLoading ? (
-        <div className="flex justify-center py-12">
-          <span className="loading loading-spinner loading-md" />
+        <div className="flex justify-center py-16">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#171717] border-t-transparent" />
         </div>
       ) : (
-        <div className="card bg-base-100 shadow">
-          <div className="card-body">
-            <h3 className="text-lg font-semibold">Users</h3>
-            <div className="overflow-x-auto">
-              <table className="table w-full">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    {isAdmin && <th>Actions</th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {users?.data.map((user) => (
-                    <tr key={user.id} className={!user.isActive ? "opacity-50" : ""}>
-                      <td className="font-medium">{user.displayName}</td>
-                      <td className="text-sm">{user.email}</td>
-                      <td>
-                        {isAdmin && user.isActive && user.id !== session?.userId ? (
-                          <select
-                            className="select select-bordered select-xs"
-                            value={user.role}
-                            onChange={(e) =>
-                              roleMutation.mutate({
-                                userId: user.id,
-                                role: e.target.value as TenantRole,
-                              })
-                            }
+        <Card className="overflow-hidden">
+          <CardHeader>
+            <CardTitle>Active Workspace Members</CardTitle>
+          </CardHeader>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-[#E5E5E5] bg-[#FAFAFA] text-[11px] font-semibold uppercase tracking-wider text-[#737373]">
+                  <th className="py-3 px-4">Member Name</th>
+                  <th className="py-3 px-4">Email</th>
+                  <th className="py-3 px-4">Role</th>
+                  <th className="py-3 px-4">Status</th>
+                  {isAdmin && <th className="py-3 px-4 text-right">Actions</th>}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F0F0F0]">
+                {users?.data.map((user) => (
+                  <tr key={user.id} className={`hover:bg-[#FAFAFA] transition-colors ${!user.isActive ? "opacity-50" : ""}`}>
+                    <td className="py-3 px-4 font-medium text-[#171717]">{user.displayName}</td>
+                    <td className="py-3 px-4 font-mono text-[11px] text-[#737373]">{user.email}</td>
+                    <td className="py-3 px-4">
+                      {isAdmin && user.isActive && user.id !== session?.userId ? (
+                        <select
+                          className="rounded border border-[#E5E5E5] bg-white px-2 py-0.5 text-xs text-[#262626] focus:outline-none focus:border-[#171717]"
+                          value={user.role}
+                          onChange={(e) =>
+                            roleMutation.mutate({
+                              userId: user.id,
+                              role: e.target.value as TenantRole,
+                            })
+                          }
+                          disabled={
+                            roleMutation.isPending || (user.role === "owner" && !isOwner)
+                          }
+                        >
+                          {ROLES.filter((r) => isOwner || r !== "owner").map((r) => (
+                            <option key={r} value={r}>
+                              {r.charAt(0).toUpperCase() + r.slice(1)}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <StatusBadge variant="neutral" showDot={false}>
+                          {user.role.toUpperCase()}
+                        </StatusBadge>
+                      )}
+                    </td>
+                    <td className="py-3 px-4">
+                      <StatusBadge variant={user.isActive ? "success" : "neutral"} showDot={true}>
+                        {user.isActive ? "Active" : "Inactive"}
+                      </StatusBadge>
+                    </td>
+                    {isAdmin && (
+                      <td className="py-3 px-4 text-right">
+                        {user.isActive && user.id !== session?.userId && (
+                          <button
+                            type="button"
+                            className="rounded border border-[#E5E5E5] bg-white px-2 py-0.5 text-[11px] font-medium text-[#737373] hover:text-[#171717] hover:bg-[#F5F5F5] transition-colors"
+                            onClick={() => deactivateMutation.mutate(user.id)}
                             disabled={
-                              roleMutation.isPending ||
-                              (user.role === "owner" && !isOwner)
+                              deactivateMutation.isPending || (user.role === "owner" && !isOwner)
                             }
                           >
-                            {ROLES.filter((r) => isOwner || r !== "owner").map((r) => (
-                              <option key={r} value={r}>{r}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <span className={`badge badge-sm ${ROLE_BADGE[user.role]}`}>
-                            {user.role}
-                          </span>
+                            Deactivate
+                          </button>
+                        )}
+                        {user.id === session?.userId && (
+                          <span className="text-[11px] text-[#A3A3A3] italic">Current Session</span>
                         )}
                       </td>
-                      <td>
-                        <span
-                          className={`badge badge-sm ${user.isActive ? "badge-success" : "badge-error"}`}
-                        >
-                          {user.isActive ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                      {isAdmin && (
-                        <td>
-                          {user.isActive && user.id !== session?.userId && (
-                            <button
-                              className="btn btn-ghost btn-xs text-error"
-                              onClick={() => deactivateMutation.mutate(user.id)}
-                              disabled={
-                                deactivateMutation.isPending ||
-                                (user.role === "owner" && !isOwner)
-                              }
-                            >
-                              Deactivate
-                            </button>
-                          )}
-                          {user.id === session?.userId && (
-                            <span className="text-xs text-base-content/50">You</span>
-                          )}
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {users && (
-              <p className="text-xs text-base-content/50 pt-2">
-                {users.total} user{users.total !== 1 ? "s" : ""} total
-              </p>
-            )}
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
+          {users && (
+            <div className="border-t border-[#F0F0F0] bg-[#FAFAFA] px-4 py-2 text-[11px] text-[#737373]">
+              {users.total} team member{users.total !== 1 ? "s" : ""} registered
+            </div>
+          )}
+        </Card>
       )}
 
-      {/* Invitations */}
+      {/* Invitations Table Card */}
       {isAdmin && invitations && invitations.total > 0 && (
-        <div className="card bg-base-100 shadow">
-          <div className="card-body">
-            <h3 className="text-lg font-semibold">Invitations</h3>
-            <div className="overflow-x-auto">
-              <table className="table w-full">
-                <thead>
-                  <tr>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Expires</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invitations.data.map((inv) => (
-                    <tr key={inv.id}>
-                      <td className="text-sm">{inv.email}</td>
-                      <td>
-                        <span className={`badge badge-sm ${ROLE_BADGE[inv.role]}`}>
-                          {inv.role}
-                        </span>
+        <Card className="overflow-hidden">
+          <CardHeader>
+            <CardTitle>Pending &amp; Sent Invitations</CardTitle>
+          </CardHeader>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-[#E5E5E5] bg-[#FAFAFA] text-[11px] font-semibold uppercase tracking-wider text-[#737373]">
+                  <th className="py-3 px-4">Recipient Email</th>
+                  <th className="py-3 px-4">Assigned Role</th>
+                  <th className="py-3 px-4">Invite Status</th>
+                  <th className="py-3 px-4">Expiration</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F0F0F0]">
+                {invitations.data.map((inv) => {
+                  const variant: StatusVariant =
+                    inv.status === "pending"
+                      ? "warning"
+                      : inv.status === "accepted"
+                        ? "success"
+                        : "error";
+
+                  return (
+                    <tr key={inv.id} className="hover:bg-[#FAFAFA] transition-colors">
+                      <td className="py-3 px-4 font-mono text-[11px] text-[#262626]">{inv.email}</td>
+                      <td className="py-3 px-4">
+                        <StatusBadge variant="neutral" showDot={false}>
+                          {inv.role.toUpperCase()}
+                        </StatusBadge>
                       </td>
-                      <td>
-                        <span
-                          className={`badge badge-sm ${
-                            inv.status === "pending"
-                              ? "badge-warning"
-                              : inv.status === "accepted"
-                                ? "badge-success"
-                                : "badge-error"
-                          }`}
-                        >
-                          {inv.status}
-                        </span>
+                      <td className="py-3 px-4">
+                        <StatusBadge variant={variant}>{inv.status}</StatusBadge>
                       </td>
-                      <td className="text-xs text-base-content/70">
-                        {new Date(inv.expiresAt).toLocaleString()}
+                      <td className="py-3 px-4 text-[#737373]">
+                        {new Date(inv.expiresAt).toLocaleDateString()}
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );

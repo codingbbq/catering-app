@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { resetPassword } from "@/lib/auth-api";
 
 export default function ResetPasswordPage() {
@@ -42,66 +43,90 @@ export default function ResetPasswordPage() {
 
   if (success) {
     return (
-      <div className="card w-full max-w-md bg-base-100 shadow-xl">
-        <div className="card-body items-center text-center">
-          <h1 className="card-title text-2xl">Password reset</h1>
-          <p className="text-sm text-base-content/70">
-            Your password has been reset successfully. You can now sign in with your new password.
-          </p>
-          <Link href="/" className="btn btn-primary btn-sm mt-4">
-            Go to home
-          </Link>
-        </div>
-      </div>
+      <Card>
+        <CardContent className="py-8 text-center space-y-4">
+          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700">
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <div className="space-y-1">
+            <h2 className="text-base font-semibold text-[#171717]">Password successfully updated</h2>
+            <p className="text-xs text-[#737373] max-w-xs mx-auto">
+              You can now sign in to your workspace using your newly configured credentials.
+            </p>
+          </div>
+          <div className="pt-2">
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center rounded bg-[#171717] px-4 py-2 text-xs font-medium text-white hover:bg-[#262626] transition-colors"
+            >
+              Go to Workspace
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="card w-full max-w-md bg-base-100 shadow-xl">
-      <div className="card-body">
-        <h1 className="card-title text-2xl">Reset Password</h1>
-        <p className="text-sm text-base-content/70">Enter your new password below.</p>
+    <Card>
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-xl font-bold">Set New Password</CardTitle>
+        <CardDescription>
+          Enter your new credentials to restore workspace access
+        </CardDescription>
+      </CardHeader>
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="alert alert-error text-sm">
-              <span>{error}</span>
+            <div className="rounded border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+              {error}
             </div>
           )}
 
-          <fieldset className="fieldset">
-            <label className="fieldset-label" htmlFor="password">New password</label>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="new-password">
+              New Password
+            </label>
             <input
-              id="password"
+              id="new-password"
               type="password"
-              className="input input-bordered w-full"
-              placeholder="Enter new password"
+              className="w-full rounded border border-[#E5E5E5] bg-white px-3 py-2 text-sm text-[#262626] placeholder-[#A3A3A3] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717]"
+              placeholder="Minimum 8 characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
             />
-          </fieldset>
+          </div>
 
-          <fieldset className="fieldset">
-            <label className="fieldset-label" htmlFor="confirmPassword">Confirm password</label>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="confirm-password">
+              Confirm New Password
+            </label>
             <input
-              id="confirmPassword"
+              id="confirm-password"
               type="password"
-              className="input input-bordered w-full"
-              placeholder="Confirm new password"
+              className="w-full rounded border border-[#E5E5E5] bg-white px-3 py-2 text-sm text-[#262626] placeholder-[#A3A3A3] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717]"
+              placeholder="Repeat new password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               minLength={8}
             />
-          </fieldset>
+          </div>
 
-          <button type="submit" className="btn btn-primary w-full" disabled={loading}>
-            {loading ? <span className="loading loading-spinner loading-sm" /> : "Reset password"}
+          <button
+            type="submit"
+            className="w-full rounded bg-[#171717] py-2 text-xs font-medium text-white hover:bg-[#262626] transition-colors disabled:opacity-50"
+            disabled={loading}
+          >
+            {loading ? "Updating..." : "Update Password"}
           </button>
         </form>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

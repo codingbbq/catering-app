@@ -11,7 +11,7 @@ import { apiFetch } from "./api-client";
 
 export function listCustomers(
   token: string,
-  params?: { search?: string; isActive?: boolean },
+  params?: { search?: string | undefined; isActive?: boolean | undefined },
 ): Promise<CustomerListResponse> {
   const query = new URLSearchParams();
   if (params?.search) query.set("search", params.search);

@@ -5,6 +5,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatusBadge, type StatusVariant } from "@/components/ui/status-badge";
 import {
   activateTenant,
   archiveTenant,
@@ -14,25 +17,55 @@ import {
 } from "@/lib/platform-api";
 import { useAuth } from "@/providers/auth-provider";
 
-const STATUS_BADGE: Record<TenantStatus, string> = {
-  onboarding: "badge-info",
-  active: "badge-success",
-  suspended: "badge-warning",
-  archived: "badge-neutral",
+const STATUS_VARIANT: Record<TenantStatus, StatusVariant> = {
+  onboarding: "neutral",
+  active: "success",
+  suspended: "warning",
+  archived: "neutral",
 };
 
-const LIFECYCLE_ACTIONS: Record<TenantStatus, { label: string; action: string; css: string }[]> = {
+interface LifecycleConfig {
+  label: string;
+  action: string;
+  styleClass: string;
+}
+
+const LIFECYCLE_ACTIONS: Record<TenantStatus, LifecycleConfig[]> = {
   onboarding: [
-    { label: "Activate", action: "activate", css: "btn-success" },
-    { label: "Archive", action: "archive", css: "btn-neutral" },
+    {
+      label: "Activate Tenant",
+      action: "activate",
+      styleClass: "bg-[#171717] text-white hover:bg-[#262626] border-[#171717]",
+    },
+    {
+      label: "Archive",
+      action: "archive",
+      styleClass: "bg-white text-[#737373] hover:text-[#171717] border-[#E5E5E5] hover:bg-[#F5F5F5]",
+    },
   ],
   active: [
-    { label: "Suspend", action: "suspend", css: "btn-warning" },
-    { label: "Archive", action: "archive", css: "btn-neutral" },
+    {
+      label: "Suspend Access",
+      action: "suspend",
+      styleClass: "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100",
+    },
+    {
+      label: "Archive",
+      action: "archive",
+      styleClass: "bg-white text-[#737373] hover:text-[#171717] border-[#E5E5E5] hover:bg-[#F5F5F5]",
+    },
   ],
   suspended: [
-    { label: "Reactivate", action: "activate", css: "btn-success" },
-    { label: "Archive", action: "archive", css: "btn-neutral" },
+    {
+      label: "Reactivate Access",
+      action: "activate",
+      styleClass: "bg-[#171717] text-white hover:bg-[#262626] border-[#171717]",
+    },
+    {
+      label: "Archive",
+      action: "archive",
+      styleClass: "bg-white text-[#737373] hover:text-[#171717] border-[#E5E5E5] hover:bg-[#F5F5F5]",
+    },
   ],
   archived: [],
 };
@@ -71,21 +104,6 @@ export default function TenantDetailPage() {
     },
   });
 
-  const lifecycleMutation = useMutation({
-    mutationFn: ({ action }: { action: string }) => {
-      const fn = ACTION_FN[action];
-      if (!fn) throw new Error(`Unknown action: ${action}`);
-      return fn(tenantId, accessToken!);
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["platform", "tenant", tenantId] });
-      void queryClient.invalidateQueries({ queryKey: ["platform", "tenants"] });
-    },
-    onError: (err) => {
-      setError(err instanceof Error ? err.message : "Action failed.");
-    },
-  });
-
   const updateMutation = useMutation({
     mutationFn: () =>
       updateTenant(
@@ -96,22 +114,41 @@ export default function TenantDetailPage() {
         },
         accessToken!,
       ),
-    onSuccess: () => {
+    onSuccess: (updated) => {
       setEditMode(false);
-      void queryClient.invalidateQueries({ queryKey: ["platform", "tenant", tenantId] });
+      queryClient.setQueryData(["platform", "tenant", tenantId], updated);
       void queryClient.invalidateQueries({ queryKey: ["platform", "tenants"] });
     },
     onError: (err) => {
-      setError(err instanceof Error ? err.message : "Update failed.");
+      setError(err instanceof Error ? err.message : "Failed to update tenant.");
+    },
+  });
+
+  const lifecycleMutation = useMutation({
+    mutationFn: ({ action }: { action: string }) => {
+      const fn = ACTION_FN[action];
+      if (!fn) throw new Error(`Unknown action: ${action}`);
+      return fn(tenantId, accessToken!);
+    },
+    onSuccess: (updated) => {
+      queryClient.setQueryData(["platform", "tenant", tenantId], updated);
+      void queryClient.invalidateQueries({ queryKey: ["platform", "tenants"] });
+    },
+    onError: (err) => {
+      setError(err instanceof Error ? err.message : "Lifecycle transition failed.");
     },
   });
 
   if (!isAuthenticated || !isPlatform) {
     return (
-      <div className="flex flex-col items-center gap-4 py-20">
-        <h2 className="text-xl font-semibold">Platform access required</h2>
-        <Link href="/platform/sign-in" className="btn btn-secondary btn-sm">
-          Sign in
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <h2 className="text-base font-semibold text-[#171717]">Platform Access Required</h2>
+        <p className="mt-1 text-xs text-[#737373]">Sign in as a platform administrator to inspect this tenant.</p>
+        <Link
+          href="/platform/sign-in"
+          className="mt-4 inline-flex items-center justify-center rounded bg-[#171717] px-3.5 py-1.5 text-xs font-medium text-white hover:bg-[#262626] transition-colors"
+        >
+          Sign In
         </Link>
       </div>
     );
@@ -120,51 +157,79 @@ export default function TenantDetailPage() {
   if (isLoading) {
     return (
       <div className="flex justify-center py-20">
-        <span className="loading loading-spinner loading-lg" />
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#171717] border-t-transparent" />
       </div>
     );
   }
 
   if (!tenant) {
     return (
-      <div className="flex flex-col items-center gap-4 py-20">
-        <h2 className="text-xl font-semibold">Tenant not found</h2>
-        <Link href="/platform" className="btn btn-ghost btn-sm">
-          Back to tenants
+      <div className="mx-auto max-w-md py-16 text-center space-y-3">
+        <h2 className="text-base font-semibold text-[#171717]">Tenant Not Found</h2>
+        <p className="text-xs text-[#737373]">The requested tenant record could not be found or has been removed.</p>
+        <Link
+          href="/platform"
+          className="inline-flex items-center justify-center rounded border border-[#E5E5E5] bg-white px-3 py-1.5 text-xs font-medium text-[#262626] hover:bg-[#F5F5F5] transition-colors"
+        >
+          &larr; Back to Platform
         </Link>
       </div>
     );
   }
 
-  const actions = LIFECYCLE_ACTIONS[tenant.status];
+  const actions = LIFECYCLE_ACTIONS[tenant.status] ?? [];
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <Link href="/platform" className="btn btn-ghost btn-sm">
-        &larr; Back to tenants
-      </Link>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <PageHeader
+        title={tenant.displayName}
+        description={`Organization Slug: /tenant/${tenant.slug}`}
+        backHref="/platform"
+        backLabel="Back to Tenants"
+        badge={
+          <StatusBadge variant={STATUS_VARIANT[tenant.status]}>
+            {tenant.status}
+          </StatusBadge>
+        }
+        actions={
+          <Link
+            href={`/tenant/${tenant.slug}`}
+            className="inline-flex items-center rounded border border-[#E5E5E5] bg-white px-3 py-1.5 text-xs font-medium text-[#262626] hover:bg-[#F5F5F5] transition-colors"
+          >
+            Open Workspace &rarr;
+          </Link>
+        }
+      />
 
       {error && (
-        <div className="alert alert-error text-sm">
+        <div className="flex items-center justify-between rounded border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
           <span>{error}</span>
-          <button className="btn btn-ghost btn-xs" onClick={() => setError("")}>
+          <button
+            type="button"
+            onClick={() => setError("")}
+            className="text-xs font-medium text-rose-800 underline hover:no-underline"
+          >
             Dismiss
           </button>
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold">{tenant.displayName}</h2>
-          <p className="font-mono text-sm text-base-content/60">{tenant.slug}</p>
-        </div>
-        <span className={`badge ${STATUS_BADGE[tenant.status]}`}>{tenant.status}</span>
-      </div>
+      {/* Detail Card */}
+      <Card>
+        <CardHeader className="flex items-center justify-between">
+          <CardTitle>Organization Settings &amp; Configuration</CardTitle>
+          {!editMode && (
+            <button
+              type="button"
+              onClick={() => setEditMode(true)}
+              className="rounded border border-[#E5E5E5] bg-white px-2.5 py-1 text-xs font-medium text-[#262626] hover:bg-[#F5F5F5] transition-colors"
+            >
+              Edit Profile
+            </button>
+          )}
+        </CardHeader>
 
-      {/* Detail card */}
-      <div className="card bg-base-100 shadow">
-        <div className="card-body">
+        <CardContent>
           {editMode ? (
             <form
               onSubmit={(e) => {
@@ -173,56 +238,64 @@ export default function TenantDetailPage() {
               }}
               className="space-y-4"
             >
-              <fieldset className="fieldset">
-                <label className="fieldset-label" htmlFor="editDisplayName">Display name</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="edit-name">
+                  Display Name
+                </label>
                 <input
-                  id="editDisplayName"
+                  id="edit-name"
                   type="text"
-                  className="input input-bordered w-full"
+                  className="w-full rounded border border-[#E5E5E5] bg-white px-3 py-2 text-sm text-[#262626] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717]"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   required
                 />
-              </fieldset>
+              </div>
 
               <div className="grid gap-4 sm:grid-cols-3">
-                <fieldset className="fieldset">
-                  <label className="fieldset-label" htmlFor="editTimezone">Timezone</label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="edit-tz">
+                    Timezone
+                  </label>
                   <input
-                    id="editTimezone"
+                    id="edit-tz"
                     type="text"
-                    className="input input-bordered w-full"
+                    className="w-full rounded border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#262626] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717]"
                     value={timezone}
                     onChange={(e) => setTimezone(e.target.value)}
                   />
-                </fieldset>
-                <fieldset className="fieldset">
-                  <label className="fieldset-label" htmlFor="editCurrency">Currency</label>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="edit-curr">
+                    Currency
+                  </label>
                   <input
-                    id="editCurrency"
+                    id="edit-curr"
                     type="text"
-                    className="input input-bordered w-full"
+                    className="w-full rounded border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#262626] uppercase font-mono focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717]"
                     value={currencyCode}
                     onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())}
                     maxLength={3}
                   />
-                </fieldset>
-                <fieldset className="fieldset">
-                  <label className="fieldset-label" htmlFor="editLocale">Locale</label>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="edit-locale">
+                    Locale
+                  </label>
                   <input
-                    id="editLocale"
+                    id="edit-locale"
                     type="text"
-                    className="input input-bordered w-full"
+                    className="w-full rounded border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#262626] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717]"
                     value={locale}
                     onChange={(e) => setLocale(e.target.value)}
                   />
-                </fieldset>
+                </div>
               </div>
 
-              <div className="flex gap-2 justify-end">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#F0F0F0]">
                 <button
                   type="button"
-                  className="btn btn-ghost btn-sm"
+                  className="rounded border border-[#E5E5E5] bg-white px-3 py-1.5 text-xs font-medium text-[#262626] hover:bg-[#F5F5F5] transition-colors"
                   onClick={() => {
                     setEditMode(false);
                     setDisplayName(tenant.displayName);
@@ -235,89 +308,76 @@ export default function TenantDetailPage() {
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-secondary btn-sm"
+                  className="rounded bg-[#171717] px-3.5 py-1.5 text-xs font-medium text-white hover:bg-[#262626] transition-colors disabled:opacity-50"
                   disabled={updateMutation.isPending}
                 >
-                  {updateMutation.isPending ? (
-                    <span className="loading loading-spinner loading-sm" />
-                  ) : (
-                    "Save changes"
-                  )}
+                  {updateMutation.isPending ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </form>
           ) : (
-            <>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <p className="text-xs font-medium uppercase text-base-content/50">Tenant ID</p>
-                  <p className="font-mono text-sm">{tenant.id}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase text-base-content/50">Users</p>
-                  <p className="text-sm">{tenant.userCount}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase text-base-content/50">Timezone</p>
-                  <p className="text-sm">{tenant.settings?.timezone ?? "—"}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase text-base-content/50">Currency</p>
-                  <p className="text-sm">{tenant.settings?.currencyCode ?? "—"}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase text-base-content/50">Locale</p>
-                  <p className="text-sm">{tenant.settings?.locale ?? "—"}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase text-base-content/50">Created</p>
-                  <p className="text-sm">{new Date(tenant.createdAt).toLocaleString()}</p>
-                </div>
+            <div className="grid gap-4 sm:grid-cols-2 text-xs">
+              <div className="space-y-1">
+                <span className="font-semibold uppercase text-[10px] tracking-wider text-[#737373]">
+                  Internal Tenant ID
+                </span>
+                <p className="font-mono text-[#262626] select-all">{tenant.id}</p>
               </div>
-              <div className="card-actions justify-end pt-2">
-                <button
-                  className="btn btn-ghost btn-sm"
-                  onClick={() => setEditMode(true)}
-                >
-                  Edit
-                </button>
+              <div className="space-y-1">
+                <span className="font-semibold uppercase text-[10px] tracking-wider text-[#737373]">
+                  Registered Users
+                </span>
+                <p className="text-[#262626] font-medium">{tenant.userCount} users</p>
               </div>
-            </>
+              <div className="space-y-1">
+                <span className="font-semibold uppercase text-[10px] tracking-wider text-[#737373]">
+                  Timezone &amp; Currency
+                </span>
+                <p className="text-[#262626]">
+                  {tenant.settings?.timezone ?? "UTC"} ({tenant.settings?.currencyCode ?? "USD"})
+                </p>
+              </div>
+              <div className="space-y-1">
+                <span className="font-semibold uppercase text-[10px] tracking-wider text-[#737373]">
+                  Provisioned Timestamp
+                </span>
+                <p className="text-[#262626]">{new Date(tenant.createdAt).toLocaleString()}</p>
+              </div>
+            </div>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Lifecycle actions */}
+      {/* Lifecycle Actions */}
       {actions.length > 0 && (
-        <div className="card bg-base-100 shadow">
-          <div className="card-body">
-            <h3 className="text-lg font-semibold">Lifecycle Actions</h3>
-            <p className="text-sm text-base-content/70">
-              Change the tenant&apos;s status. These actions are audited.
-            </p>
-            <div className="flex gap-2 pt-2">
-              {actions.map(({ label, action, css }) => (
+        <Card>
+          <CardHeader>
+            <CardTitle>Lifecycle &amp; Access Controls</CardTitle>
+            <CardDescription>
+              Regulate tenant status across the platform cluster. State transitions trigger audit logging.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap items-center gap-2.5">
+              {actions.map(({ label, action, styleClass }) => (
                 <button
                   key={action}
-                  className={`btn btn-sm ${css}`}
+                  type="button"
+                  className={`inline-flex items-center rounded border px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 ${styleClass}`}
                   onClick={() => lifecycleMutation.mutate({ action })}
                   disabled={lifecycleMutation.isPending}
                 >
-                  {lifecycleMutation.isPending ? (
-                    <span className="loading loading-spinner loading-sm" />
-                  ) : (
-                    label
-                  )}
+                  {lifecycleMutation.isPending ? "Updating..." : label}
                 </button>
               ))}
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {tenant.status === "archived" && (
-        <div className="rounded-2xl border border-dashed border-base-300 p-5 text-center text-sm text-base-content/50">
-          This tenant is archived. No further lifecycle transitions are available.
+        <div className="rounded border border-dashed border-[#E5E5E5] bg-[#FAFAFA] p-4 text-center text-xs text-[#737373]">
+          This tenant organization is archived. Data remains preserved under immutable read status.
         </div>
       )}
     </div>

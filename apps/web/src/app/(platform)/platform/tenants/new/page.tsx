@@ -4,6 +4,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 import { createTenant } from "@/lib/platform-api";
 import { useAuth } from "@/providers/auth-provider";
 
@@ -21,10 +23,14 @@ export default function CreateTenantPage() {
 
   if (!isAuthenticated || !isPlatform) {
     return (
-      <div className="flex flex-col items-center gap-4 py-20">
-        <h2 className="text-xl font-semibold">Platform access required</h2>
-        <Link href="/platform/sign-in" className="btn btn-secondary btn-sm">
-          Sign in
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <h2 className="text-base font-semibold text-[#171717]">Platform Access Required</h2>
+        <p className="mt-1 text-xs text-[#737373]">Sign in as a platform administrator to proceed.</p>
+        <Link
+          href="/platform/sign-in"
+          className="mt-4 inline-flex items-center justify-center rounded bg-[#171717] px-3.5 py-1.5 text-xs font-medium text-white hover:bg-[#262626] transition-colors"
+        >
+          Sign In
         </Link>
       </div>
     );
@@ -55,107 +61,121 @@ export default function CreateTenantPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <Link href="/platform" className="btn btn-ghost btn-sm mb-2">
-          &larr; Back to tenants
-        </Link>
-        <h2 className="text-2xl font-semibold">Create Tenant</h2>
-        <p className="text-sm text-base-content/70">
-          Onboard a new tenant business. It will start in &ldquo;onboarding&rdquo; status.
-        </p>
-      </div>
+      <PageHeader
+        title="Provision Tenant Organization"
+        description="Onboard a new catering business organization with isolated schema governance."
+        backHref="/platform"
+        backLabel="Back to Tenants"
+      />
 
-      <form onSubmit={handleSubmit} className="card bg-base-100 shadow">
-        <div className="card-body space-y-4">
-          {error && (
-            <div className="alert alert-error text-sm">
-              <span>{error}</span>
+      <Card>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="rounded border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="tenant-name">
+                Business Display Name *
+              </label>
+              <input
+                id="tenant-name"
+                type="text"
+                className="w-full rounded border border-[#E5E5E5] bg-white px-3 py-2 text-sm text-[#262626] placeholder-[#A3A3A3] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717]"
+                placeholder="e.g. Apex Catering Co."
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                required
+              />
             </div>
-          )}
 
-          <fieldset className="fieldset">
-            <label className="fieldset-label" htmlFor="displayName">Display name</label>
-            <input
-              id="displayName"
-              type="text"
-              className="input input-bordered w-full"
-              placeholder="Acme Catering Co"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              required
-              maxLength={160}
-            />
-          </fieldset>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="tenant-slug">
+                Workspace Slug *
+              </label>
+              <div className="flex items-center rounded border border-[#E5E5E5] bg-white focus-within:border-[#171717] focus-within:ring-1 focus-within:ring-[#171717]">
+                <span className="pl-3 text-xs text-[#A3A3A3] font-mono">/tenant/</span>
+                <input
+                  id="tenant-slug"
+                  type="text"
+                  className="w-full bg-transparent px-1 py-2 text-sm text-[#262626] font-mono placeholder-[#A3A3A3] focus:outline-none"
+                  placeholder="apex-catering"
+                  value={slug}
+                  onChange={(e) =>
+                    setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
+                  }
+                  required
+                />
+              </div>
+              <p className="text-[11px] text-[#737373]">Lowercase alphanumeric and hyphens only.</p>
+            </div>
 
-          <fieldset className="fieldset">
-            <label className="fieldset-label" htmlFor="slug">Slug</label>
-            <input
-              id="slug"
-              type="text"
-              className="input input-bordered w-full font-mono"
-              placeholder="acme-catering"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
-              required
-              pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$"
-              minLength={2}
-              maxLength={64}
-            />
-            <p className="mt-1 text-xs text-base-content/50">
-              Lowercase letters, numbers, and hyphens. Used in URLs.
-            </p>
-          </fieldset>
+            <div className="grid gap-4 sm:grid-cols-3 pt-2 border-t border-[#F0F0F0]">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="tenant-tz">
+                  Timezone
+                </label>
+                <input
+                  id="tenant-tz"
+                  type="text"
+                  className="w-full rounded border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#262626] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717]"
+                  value={timezone}
+                  onChange={(e) => setTimezone(e.target.value)}
+                  placeholder="UTC"
+                />
+              </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
-            <fieldset className="fieldset">
-              <label className="fieldset-label" htmlFor="timezone">Timezone</label>
-              <input
-                id="timezone"
-                type="text"
-                className="input input-bordered w-full"
-                placeholder="UTC"
-                value={timezone}
-                onChange={(e) => setTimezone(e.target.value)}
-              />
-            </fieldset>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="tenant-curr">
+                  Currency Code
+                </label>
+                <input
+                  id="tenant-curr"
+                  type="text"
+                  className="w-full rounded border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#262626] uppercase font-mono focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717]"
+                  value={currencyCode}
+                  onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())}
+                  placeholder="USD"
+                  maxLength={3}
+                />
+              </div>
 
-            <fieldset className="fieldset">
-              <label className="fieldset-label" htmlFor="currencyCode">Currency</label>
-              <input
-                id="currencyCode"
-                type="text"
-                className="input input-bordered w-full"
-                placeholder="USD"
-                value={currencyCode}
-                onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())}
-                maxLength={3}
-                minLength={3}
-              />
-            </fieldset>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="tenant-locale">
+                  Locale
+                </label>
+                <input
+                  id="tenant-locale"
+                  type="text"
+                  className="w-full rounded border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#262626] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717]"
+                  value={locale}
+                  onChange={(e) => setLocale(e.target.value)}
+                  placeholder="en"
+                />
+              </div>
+            </div>
 
-            <fieldset className="fieldset">
-              <label className="fieldset-label" htmlFor="locale">Locale</label>
-              <input
-                id="locale"
-                type="text"
-                className="input input-bordered w-full"
-                placeholder="en"
-                value={locale}
-                onChange={(e) => setLocale(e.target.value)}
-              />
-            </fieldset>
-          </div>
-
-          <div className="card-actions justify-end pt-2">
-            <Link href="/platform" className="btn btn-ghost btn-sm">
-              Cancel
-            </Link>
-            <button type="submit" className="btn btn-secondary btn-sm" disabled={loading}>
-              {loading ? <span className="loading loading-spinner loading-sm" /> : "Create tenant"}
-            </button>
-          </div>
-        </div>
-      </form>
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#F0F0F0]">
+              <Link
+                href="/platform"
+                className="rounded border border-[#E5E5E5] bg-white px-3.5 py-1.5 text-xs font-medium text-[#262626] hover:bg-[#F5F5F5] transition-colors"
+              >
+                Cancel
+              </Link>
+              <button
+                type="submit"
+                className="rounded bg-[#171717] px-4 py-1.5 text-xs font-medium text-white hover:bg-[#262626] transition-colors disabled:opacity-50"
+                disabled={loading}
+              >
+                {loading ? "Provisioning..." : "Create Tenant"}
+              </button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

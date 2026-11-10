@@ -73,7 +73,7 @@ export function CustomerForm({
             validators={{
               onChange: ({ value }) => {
                 if (!value || value.trim().length === 0) {
-                  return "Customer name is required.";
+                  return "Customer / company name is required.";
                 }
                 if (value.length > 200) {
                   return "Customer name cannot exceed 200 characters.";
@@ -83,14 +83,18 @@ export function CustomerForm({
             }}
           >
             {(field) => (
-              <div className="form-control w-full">
-                <label className="label" htmlFor="customer-name">
-                  <span className="label-text font-medium">Customer / Company Name *</span>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="customer-name">
+                  Customer / Corporate Account Name *
                 </label>
                 <input
                   id="customer-name"
                   type="text"
-                  className={`input input-bordered w-full ${field.state.meta.errors.length > 0 ? "input-error" : ""}`}
+                  className={`w-full rounded border bg-white px-3 py-2 text-sm text-[#262626] placeholder-[#A3A3A3] focus:outline-none focus:ring-1 ${
+                    field.state.meta.errors.length > 0
+                      ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500"
+                      : "border-[#E5E5E5] focus:border-[#171717] focus:ring-[#171717]"
+                  }`}
                   placeholder="e.g. Apex Corporation or John Smith"
                   value={field.state.value}
                   onBlur={field.handleBlur}
@@ -98,9 +102,9 @@ export function CustomerForm({
                   required
                 />
                 {field.state.meta.errors.length > 0 && (
-                  <span className="text-error text-xs mt-1">
+                  <p className="text-[11px] text-rose-600">
                     {field.state.meta.errors.map((err) => String(err)).join(", ")}
-                  </span>
+                  </p>
                 )}
               </div>
             )}
@@ -120,23 +124,27 @@ export function CustomerForm({
             }}
           >
             {(field) => (
-              <div className="form-control w-full">
-                <label className="label" htmlFor="customer-email">
-                  <span className="label-text font-medium">Email Address</span>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="customer-email">
+                  Primary Email
                 </label>
                 <input
                   id="customer-email"
                   type="email"
-                  className={`input input-bordered w-full ${field.state.meta.errors.length > 0 ? "input-error" : ""}`}
+                  className={`w-full rounded border bg-white px-3 py-2 text-sm text-[#262626] placeholder-[#A3A3A3] focus:outline-none focus:ring-1 ${
+                    field.state.meta.errors.length > 0
+                      ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500"
+                      : "border-[#E5E5E5] focus:border-[#171717] focus:ring-[#171717]"
+                  }`}
                   placeholder="contact@company.com"
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                 />
                 {field.state.meta.errors.length > 0 && (
-                  <span className="text-error text-xs mt-1">
+                  <p className="text-[11px] text-rose-600">
                     {field.state.meta.errors.map((err) => String(err)).join(", ")}
-                  </span>
+                  </p>
                 )}
               </div>
             )}
@@ -156,23 +164,27 @@ export function CustomerForm({
             }}
           >
             {(field) => (
-              <div className="form-control w-full">
-                <label className="label" htmlFor="customer-phone">
-                  <span className="label-text font-medium">Phone Number</span>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="customer-phone">
+                  Phone Number
                 </label>
                 <input
                   id="customer-phone"
                   type="tel"
-                  className={`input input-bordered w-full ${field.state.meta.errors.length > 0 ? "input-error" : ""}`}
+                  className={`w-full rounded border bg-white px-3 py-2 text-sm text-[#262626] placeholder-[#A3A3A3] focus:outline-none focus:ring-1 ${
+                    field.state.meta.errors.length > 0
+                      ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500"
+                      : "border-[#E5E5E5] focus:border-[#171717] focus:ring-[#171717]"
+                  }`}
                   placeholder="+1 (555) 123-4567"
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                 />
                 {field.state.meta.errors.length > 0 && (
-                  <span className="text-error text-xs mt-1">
+                  <p className="text-[11px] text-rose-600">
                     {field.state.meta.errors.map((err) => String(err)).join(", ")}
-                  </span>
+                  </p>
                 )}
               </div>
             )}
@@ -192,23 +204,27 @@ export function CustomerForm({
             }}
           >
             {(field) => (
-              <div className="form-control w-full">
-                <label className="label" htmlFor="customer-address">
-                  <span className="label-text font-medium">Address</span>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="customer-address">
+                  Physical / Billing Address
                 </label>
                 <textarea
                   id="customer-address"
-                  className={`textarea textarea-bordered w-full ${field.state.meta.errors.length > 0 ? "textarea-error" : ""}`}
-                  placeholder="Street address, suite, city, state, postal code"
                   rows={2}
+                  className={`w-full rounded border bg-white px-3 py-2 text-sm text-[#262626] placeholder-[#A3A3A3] focus:outline-none focus:ring-1 ${
+                    field.state.meta.errors.length > 0
+                      ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500"
+                      : "border-[#E5E5E5] focus:border-[#171717] focus:ring-[#171717]"
+                  }`}
+                  placeholder="Street address, suite, city, state, postal code"
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                 />
                 {field.state.meta.errors.length > 0 && (
-                  <span className="text-error text-xs mt-1">
+                  <p className="text-[11px] text-rose-600">
                     {field.state.meta.errors.map((err) => String(err)).join(", ")}
-                  </span>
+                  </p>
                 )}
               </div>
             )}
@@ -228,23 +244,27 @@ export function CustomerForm({
             }}
           >
             {(field) => (
-              <div className="form-control w-full">
-                <label className="label" htmlFor="customer-notes">
-                  <span className="label-text font-medium">Internal Notes</span>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="customer-notes">
+                  Internal Catering Notes
                 </label>
                 <textarea
                   id="customer-notes"
-                  className={`textarea textarea-bordered w-full ${field.state.meta.errors.length > 0 ? "textarea-error" : ""}`}
-                  placeholder="Key relationship details, dietary preferences, billing terms, special handling instructions"
                   rows={3}
+                  className={`w-full rounded border bg-white px-3 py-2 text-sm text-[#262626] placeholder-[#A3A3A3] focus:outline-none focus:ring-1 ${
+                    field.state.meta.errors.length > 0
+                      ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500"
+                      : "border-[#E5E5E5] focus:border-[#171717] focus:ring-[#171717]"
+                  }`}
+                  placeholder="Key relationship details, dietary preferences, billing terms, special handling instructions"
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                 />
                 {field.state.meta.errors.length > 0 && (
-                  <span className="text-error text-xs mt-1">
+                  <p className="text-[11px] text-rose-600">
                     {field.state.meta.errors.map((err) => String(err)).join(", ")}
-                  </span>
+                  </p>
                 )}
               </div>
             )}
@@ -253,23 +273,23 @@ export function CustomerForm({
 
         {/* Active Toggle (Edit mode only) */}
         {isEdit && (
-          <div className="sm:col-span-2">
+          <div className="sm:col-span-2 rounded border border-[#E5E5E5] bg-[#FAFAFA] p-3.5">
             <form.Field name="isActive">
               {(field) => (
-                <div className="form-control">
-                  <label className="label cursor-pointer justify-start gap-3">
-                    <input
-                      type="checkbox"
-                      className="checkbox checkbox-primary"
-                      checked={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.checked)}
-                    />
-                    <span className="label-text font-medium">Active Customer</span>
-                  </label>
-                  <p className="text-xs text-base-content/60 ml-9">
-                    Inactive customers remain in records for historical quotations and invoices, but are flagged in sales lookups.
-                  </p>
-                </div>
+                <label className="flex items-start gap-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4 rounded border-[#E5E5E5] text-[#171717] focus:ring-[#171717]"
+                    checked={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.checked)}
+                  />
+                  <div>
+                    <span className="text-xs font-semibold text-[#171717]">Account Status Active</span>
+                    <p className="text-[11px] text-[#737373] mt-0.5">
+                      Inactive customers remain preserved for historical quotations and invoices, but are omitted from active sales lookups.
+                    </p>
+                  </div>
+                </label>
               )}
             </form.Field>
           </div>
@@ -279,12 +299,12 @@ export function CustomerForm({
       {/* Action buttons */}
       <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
         {([canSubmit, isSubmitting]) => (
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-base-200">
+          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-[#F0F0F0]">
             {onCancel && (
               <button
                 type="button"
                 onClick={onCancel}
-                className="btn btn-ghost btn-sm"
+                className="rounded border border-[#E5E5E5] bg-white px-3.5 py-1.5 text-xs font-medium text-[#262626] hover:bg-[#F5F5F5] transition-colors"
                 disabled={Boolean(isSubmitting) || isPending}
               >
                 Cancel
@@ -292,17 +312,12 @@ export function CustomerForm({
             )}
             <button
               type="submit"
-              className="btn btn-primary btn-sm"
+              className="rounded bg-[#171717] px-4 py-1.5 text-xs font-medium text-white hover:bg-[#262626] transition-colors disabled:opacity-50"
               disabled={!canSubmit || Boolean(isSubmitting) || isPending}
             >
-              {isSubmitting || isPending ? (
-                <>
-                  <span className="loading loading-spinner loading-xs" />
-                  Saving...
-                </>
-              ) : (
-                submitLabel ?? (isEdit ? "Save Changes" : "Create Customer")
-              )}
+              {isSubmitting || isPending
+                ? "Saving..."
+                : submitLabel ?? (isEdit ? "Save Changes" : "Create Customer")}
             </button>
           </div>
         )}
