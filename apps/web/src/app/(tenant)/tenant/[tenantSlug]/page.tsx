@@ -135,6 +135,24 @@ export default function TenantDashboardPage() {
           </Link>
 
           <Link
+            href={`/tenant/${tenantSlug}/catalogue`}
+            className="group rounded-lg border border-[#E5E5E5] bg-white p-5 hover:border-[#171717] transition-all"
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex h-8 w-8 items-center justify-center rounded bg-[#FAFAFA] border border-[#E5E5E5] text-[#171717] group-hover:bg-[#171717] group-hover:text-white transition-colors">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+              <StatusBadge variant="success">Active</StatusBadge>
+            </div>
+            <h4 className="mt-4 text-sm font-semibold text-[#171717]">Food Catalogue &amp; Pricing</h4>
+            <p className="mt-1 text-xs text-[#737373] leading-relaxed">
+              Maintain master dishes, portion units, raw costs, selling rates, and dietary tags for menus.
+            </p>
+          </Link>
+
+          <Link
             href={`/tenant/${tenantSlug}/users`}
             className="group rounded-lg border border-[#E5E5E5] bg-white p-5 hover:border-[#171717] transition-all"
           >

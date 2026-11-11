@@ -8,7 +8,7 @@
 | TEN-001 | Tenant Administration and User Management | Critical | FND-001, IAM-001, PLT-001 | COMPLETED | [TEN-001](./04-TEN-001-tenant-lifecycle-and-admin.md) |
 | CRM-001 | Customer Management | High | FND-001, IAM-001, TEN-001 | COMPLETED | [CRM-001](./05-CRM-001-customer-management.md) |
 | CRM-002 | Enquiry Management | High | CRM-001 | COMPLETED | [CRM-002](./06-CRM-002-enquiry-management.md) |
-| CAT-001 | Food Catalogue and Catalogue Import | High | TEN-001 | NOT_STARTED | [CAT-001](./07-CAT-001-food-catalogue-and-import.md) |
+| CAT-001 | Food Catalogue and Catalogue Import | High | TEN-001 | COMPLETED | [CAT-001](./07-CAT-001-food-catalogue-and-import.md) |
 | MEN-001 | Menu Builder | High | CAT-001 | NOT_STARTED | [MEN-001](./08-MEN-001-menu-builder.md) |
 | CST-001 | Costing Engine | Critical | CAT-001, MEN-001 | NOT_STARTED | [CST-001](./09-CST-001-costing-engine.md) |
 | QTN-001 | Quotations and Revisions | Critical | CRM-002, MEN-001, CST-001 | NOT_STARTED | [QTN-001](./10-QTN-001-quotations-and-revisions.md) |

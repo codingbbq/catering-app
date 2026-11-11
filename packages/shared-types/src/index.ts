@@ -483,3 +483,163 @@ export type CreateEnquiryRequest = z.infer<typeof createEnquiryRequestSchema>;
 export type UpdateEnquiryRequest = z.infer<typeof updateEnquiryRequestSchema>;
 export type CreateEnquiryActivityRequest = z.infer<typeof createEnquiryActivityRequestSchema>;
 export type EnquirySearchParams = z.infer<typeof enquirySearchParamsSchema>;
+
+// --- CAT-001: Food Catalogue and Catalogue Import ---
+
+export const catalogueCategorySchema = z.enum([
+  "starter",
+  "main",
+  "dessert",
+  "beverage",
+  "bread",
+  "side",
+  "salad",
+  "snack",
+  "other",
+]);
+
+export const pricingUnitSchema = z.enum([
+  "per_person",
+  "per_plate",
+  "per_kg",
+  "per_tray",
+  "per_piece",
+  "per_liter",
+  "fixed",
+]);
+
+export const dietaryTagSchema = z.enum([
+  "vegetarian",
+  "vegan",
+  "halal",
+  "kosher",
+  "gluten_free",
+  "dairy_free",
+  "nut_free",
+  "spicy",
+  "organic",
+]);
+
+export const catalogueImportStatusSchema = z.enum([
+  "pending",
+  "completed",
+  "failed",
+  "partially_failed",
+]);
+
+export const catalogueItemSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(200),
+  description: z.string().nullable(),
+  category: z.string().min(1).max(60),
+  pricingUnit: pricingUnitSchema,
+  costPrice: z.number().nonnegative().nullable(),
+  sellingPrice: z.number().nonnegative(),
+  dietaryTags: z.array(z.string()),
+  minQuantity: z.number().int().positive().nullable(),
+  isArchived: z.boolean(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export const catalogueItemListStatsSchema = z.object({
+  totalItems: z.number().int().nonnegative(),
+  activeItems: z.number().int().nonnegative(),
+  archivedItems: z.number().int().nonnegative(),
+  categoriesCount: z.number().int().nonnegative(),
+});
+
+export const catalogueItemListResponseSchema = z.object({
+  data: z.array(catalogueItemSchema),
+  total: z.number().int().nonnegative(),
+  stats: catalogueItemListStatsSchema.optional(),
+});
+
+export const createCatalogueItemRequestSchema = z.object({
+  name: z.string().min(1).max(200),
+  description: z.string().max(2000).optional(),
+  category: z.string().min(1).max(60).default("main"),
+  pricingUnit: pricingUnitSchema.default("per_person"),
+  costPrice: z.number().nonnegative().optional(),
+  sellingPrice: z.number().nonnegative(),
+  dietaryTags: z.array(z.string()).default([]),
+  minQuantity: z.number().int().positive().optional(),
+});
+
+export const updateCatalogueItemRequestSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  description: z.string().max(2000).nullable().optional(),
+  category: z.string().min(1).max(60).optional(),
+  pricingUnit: pricingUnitSchema.optional(),
+  costPrice: z.number().nonnegative().nullable().optional(),
+  sellingPrice: z.number().nonnegative().optional(),
+  dietaryTags: z.array(z.string()).optional(),
+  minQuantity: z.number().int().positive().nullable().optional(),
+  isArchived: z.boolean().optional(),
+});
+
+export const catalogueSearchParamsSchema = z.object({
+  search: z.string().optional(),
+  category: z.string().optional(),
+  status: z.enum(["active", "archived", "all"]).optional(),
+  dietaryTag: z.string().optional(),
+});
+
+export const catalogueImportRowErrorSchema = z.object({
+  row: z.number().int().positive(),
+  name: z.string().optional(),
+  errors: z.array(z.string()),
+});
+
+export const catalogueImportRequestSchema = z.object({
+  filename: z.string().max(255).optional(),
+  rows: z.array(
+    z.object({
+      name: z.string(),
+      category: z.string().optional(),
+      description: z.string().optional(),
+      costPrice: z.union([z.number(), z.string()]).optional(),
+      sellingPrice: z.union([z.number(), z.string()]),
+      pricingUnit: z.string().optional(),
+      dietaryTags: z.union([z.string(), z.array(z.string())]).optional(),
+      minQuantity: z.union([z.number(), z.string()]).optional(),
+    })
+  ),
+});
+
+export const catalogueImportResultSchema = z.object({
+  jobId: z.string().uuid(),
+  status: catalogueImportStatusSchema,
+  totalRows: z.number().int().nonnegative(),
+  successfulRows: z.number().int().nonnegative(),
+  failedRows: z.number().int().nonnegative(),
+  errors: z.array(catalogueImportRowErrorSchema),
+});
+
+export const catalogueImportJobSchema = z.object({
+  id: z.string().uuid(),
+  status: catalogueImportStatusSchema,
+  filename: z.string().nullable(),
+  totalRows: z.number().int().nonnegative(),
+  successfulRows: z.number().int().nonnegative(),
+  failedRows: z.number().int().nonnegative(),
+  errors: z.array(catalogueImportRowErrorSchema),
+  importedByName: z.string().nullable(),
+  createdAt: z.string().datetime(),
+});
+
+export type CatalogueCategory = z.infer<typeof catalogueCategorySchema>;
+export type PricingUnit = z.infer<typeof pricingUnitSchema>;
+export type DietaryTag = z.infer<typeof dietaryTagSchema>;
+export type CatalogueImportStatus = z.infer<typeof catalogueImportStatusSchema>;
+export type CatalogueItem = z.infer<typeof catalogueItemSchema>;
+export type CatalogueItemListStats = z.infer<typeof catalogueItemListStatsSchema>;
+export type CatalogueItemListResponse = z.infer<typeof catalogueItemListResponseSchema>;
+export type CreateCatalogueItemRequest = z.infer<typeof createCatalogueItemRequestSchema>;
+export type UpdateCatalogueItemRequest = z.infer<typeof updateCatalogueItemRequestSchema>;
+export type CatalogueSearchParams = z.infer<typeof catalogueSearchParamsSchema>;
+export type CatalogueImportRowError = z.infer<typeof catalogueImportRowErrorSchema>;
+export type CatalogueImportRequest = z.infer<typeof catalogueImportRequestSchema>;
+export type CatalogueImportResult = z.infer<typeof catalogueImportResultSchema>;
+export type CatalogueImportJob = z.infer<typeof catalogueImportJobSchema>;
+

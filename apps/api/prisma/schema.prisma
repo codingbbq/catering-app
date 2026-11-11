@@ -34,6 +34,8 @@ model Tenant {
   invitations UserInvitation[]
   customers   Customer[]
   enquiries   Enquiry[]
+  catalogueItems CatalogueItem[]
+  catalogueImports CatalogueImportJob[]
   auditLogs   AuditLog[]
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
@@ -92,6 +94,7 @@ model TenantUser {
   tenant          Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   sessions        Session[]
   assignedEnquiries Enquiry[]
+  catalogueImports CatalogueImportJob[]
   invitedBy       String?
   resetToken      String?     @unique
   resetTokenExpiry DateTime?
@@ -257,4 +260,65 @@ model EnquiryActivity {
   createdAt  DateTime     @default(now())
 
   @@index([enquiryId, createdAt])
+}
+
+// --- CAT-001: Food Catalogue and Catalogue Import ---
+
+enum PricingUnit {
+  per_person
+  per_plate
+  per_kg
+  per_tray
+  per_piece
+  per_liter
+  fixed
+}
+
+enum CatalogueImportStatus {
+  pending
+  completed
+  failed
+  partially_failed
+}
+
+model CatalogueItem {
+  id           String      @id @default(uuid())
+  tenantId     String
+  tenant       Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name         String
+  description  String?
+  category     String      @default("main")
+  pricingUnit  PricingUnit @default(per_person)
+  costPrice    Decimal?    @db.Decimal(10, 2)
+  sellingPrice Decimal     @db.Decimal(10, 2)
+  dietaryTags  String[]    @default([])
+  minQuantity  Int?
+  isArchived   Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, category])
+  @@index([tenantId, isArchived])
+  @@index([tenantId, name])
+}
+
+model CatalogueImportJob {
+  id             String                @id @default(uuid())
+  tenantId       String
+  tenant         Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  status         CatalogueImportStatus @default(pending)
+  filename       String?
+  totalRows      Int                   @default(0)
+  successfulRows Int                   @default(0)
+  failedRows     Int                   @default(0)
+  errors         Json?                 @default("[]")
+  importedById   String?
+  importedBy     TenantUser?           @relation(fields: [importedById], references: [id], onDelete: SetNull)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
 }
