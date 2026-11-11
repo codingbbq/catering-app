@@ -36,6 +36,7 @@ model Tenant {
   enquiries   Enquiry[]
   catalogueItems CatalogueItem[]
   catalogueImports CatalogueImportJob[]
+  menus       Menu[]
   auditLogs   AuditLog[]
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
@@ -294,6 +295,8 @@ model CatalogueItem {
   dietaryTags  String[]    @default([])
   minQuantity  Int?
   isArchived   Boolean     @default(false)
+  images       CatalogueItemImage[]
+  menuItems    MenuItem[]
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
@@ -321,4 +324,68 @@ model CatalogueImportJob {
   @@index([tenantId])
   @@index([tenantId, status])
   @@index([tenantId, createdAt])
+}
+
+model CatalogueItemImage {
+  id        String        @id @default(uuid())
+  itemId    String
+  item      CatalogueItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  url       String
+  caption   String?
+  isPrimary Boolean       @default(false)
+  order     Int           @default(0)
+  createdAt DateTime      @default(now())
+
+  @@index([itemId])
+  @@index([itemId, isPrimary])
+}
+
+// --- MEN-001: Menu Builder ---
+
+enum MenuStatus {
+  draft
+  active
+  archived
+}
+
+model Menu {
+  id           String      @id @default(uuid())
+  tenantId     String
+  tenant       Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name         String
+  description  String?
+  serviceStyle String?     @default("buffet")
+  status       MenuStatus  @default(active)
+  minGuests    Int?
+  notes        String?
+  items        MenuItem[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, name])
+}
+
+model MenuItem {
+  id              String         @id @default(uuid())
+  menuId          String
+  menu            Menu           @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  catalogueItemId String?
+  catalogueItem   CatalogueItem? @relation(fields: [catalogueItemId], references: [id], onDelete: SetNull)
+  section         String         @default("General")
+  name            String
+  description     String?
+  quantity        Decimal        @default(1.0) @db.Decimal(10, 2)
+  unitPrice       Decimal        @default(0.0) @db.Decimal(10, 2)
+  costPrice       Decimal?       @db.Decimal(10, 2)
+  dietaryTags     String[]       @default([])
+  sortOrder       Int            @default(0)
+  servingNotes    String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([menuId])
+  @@index([menuId, sortOrder])
+  @@index([catalogueItemId])
 }

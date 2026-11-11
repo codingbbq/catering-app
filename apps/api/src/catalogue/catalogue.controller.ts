@@ -1,13 +1,16 @@
 import type { AuthenticatedTenantContext } from '@catering/shared-types';
 import {
+  addCatalogueItemImageRequestSchema,
   catalogueImportRequestSchema,
   catalogueSearchParamsSchema,
   createCatalogueItemRequestSchema,
   updateCatalogueItemRequestSchema,
+  uploadCatalogueItemImageRequestSchema,
 } from '@catering/shared-types';
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -113,6 +116,68 @@ export class CatalogueController {
       tenantCtx.userId,
       itemId,
       false,
+    );
+  }
+
+  @Post('catalogue-items/:itemId/images')
+  async addImage(
+    @CurrentRequestContext() ctx: unknown,
+    @Param('itemId') itemId: string,
+    @Body() body: unknown,
+  ) {
+    const tenantCtx = this.getTenantContext(ctx);
+    const dto = addCatalogueItemImageRequestSchema.parse(body);
+    return this.catalogueService.addImage(
+      tenantCtx.tenantId,
+      tenantCtx.userId,
+      itemId,
+      dto,
+    );
+  }
+
+  @Post('catalogue-items/:itemId/images/upload')
+  async uploadImage(
+    @CurrentRequestContext() ctx: unknown,
+    @Param('itemId') itemId: string,
+    @Body() body: unknown,
+  ) {
+    const tenantCtx = this.getTenantContext(ctx);
+    const dto = uploadCatalogueItemImageRequestSchema.parse(body);
+    return this.catalogueService.uploadImage(
+      tenantCtx.tenantId,
+      tenantCtx.userId,
+      itemId,
+      dto,
+    );
+  }
+
+  @Delete('catalogue-items/:itemId/images/:imageId')
+  async deleteImage(
+    @CurrentRequestContext() ctx: unknown,
+    @Param('itemId') itemId: string,
+    @Param('imageId') imageId: string,
+  ) {
+    const tenantCtx = this.getTenantContext(ctx);
+    return this.catalogueService.deleteImage(
+      tenantCtx.tenantId,
+      tenantCtx.userId,
+      itemId,
+      imageId,
+    );
+  }
+
+  @Patch('catalogue-items/:itemId/images/:imageId/primary')
+  async setPrimaryImage(
+    @CurrentRequestContext() ctx: unknown,
+    @Param('itemId') itemId: string,
+    @Param('imageId') imageId: string,
+  ) {
+    const tenantCtx = this.getTenantContext(ctx);
+    return this.catalogueService.setPrimaryImage(
+      tenantCtx.tenantId,
+      tenantCtx.userId,
+      itemId,
+      imageId,
     );
   }
 

@@ -12,6 +12,7 @@ import {
 } from "@tanstack/react-table";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { formatImageUrl } from "./catalogue-image-gallery";
 import { DietaryTagBadge } from "./dietary-tag-badge";
 import { PricingUnitBadge } from "./pricing-unit-badge";
 
@@ -36,31 +37,60 @@ export function CatalogueTable({
         header: "Item & Category",
         cell: (info) => {
           const item = info.row.original;
+          const thumbUrl = item.primaryImageUrl || item.images?.[0]?.url;
+
           return (
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                <Link
-                  href={`/tenant/${tenantSlug}/catalogue/${item.id}`}
-                  className="font-medium text-[#171717] hover:underline"
-                >
-                  {info.getValue()}
-                </Link>
-                {item.isArchived && (
-                  <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-[#E5E5E5] text-[#737373]">
-                    Archived
+            <div className="flex items-center gap-3">
+              {thumbUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={formatImageUrl(thumbUrl)}
+                  alt={item.name}
+                  className="h-10 w-10 rounded-md border border-[#E5E5E5] object-cover shrink-0"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-[#E5E5E5] bg-[#FAFAFA] text-[#A3A3A3]">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+              )}
+              <div className="space-y-0.5 min-w-0">
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/tenant/${tenantSlug}/catalogue/${item.id}`}
+                    className="font-medium text-[#171717] hover:underline truncate"
+                  >
+                    {info.getValue()}
+                  </Link>
+                  {item.isArchived && (
+                    <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-[#E5E5E5] text-[#737373]">
+                      Archived
+                    </span>
+                  )}
+                  {(item.images?.length || 0) > 1 && (
+                    <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-mono text-[#737373] bg-[#F5F5F4] border border-[#E5E5E5]">
+                      {item.images.length} pics
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 text-[11px] text-[#737373]">
+                  <span className="capitalize font-medium text-[#525252]">
+                    {item.category}
                   </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2 text-[11px] text-[#737373]">
-                <span className="capitalize font-medium text-[#525252]">
-                  {item.category}
-                </span>
-                {item.description && (
-                  <>
-                    <span>•</span>
-                    <span className="truncate max-w-xs">{item.description}</span>
-                  </>
-                )}
+                  {item.description && (
+                    <>
+                      <span>•</span>
+                      <span className="truncate max-w-xs">{item.description}</span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           );

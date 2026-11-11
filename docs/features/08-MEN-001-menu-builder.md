@@ -88,3 +88,15 @@ Allow tenant users to assemble menus from catalogue items and reusable structure
 
 - drag-and-drop interaction is optional and not required for first release
 - customer-facing public menu publishing
+
+## Implementation Notes
+
+- **Status**: Completed
+- **Data Models**: `Menu` and `MenuItem` models with `MenuStatus` enum in Prisma schema, foreign key relations with `onDelete: Cascade` (Menu -> Tenant, MenuItem -> Menu) and `onDelete: SetNull` (MenuItem -> CatalogueItem) to preserve snapshot integrity.
+- **Backend**: NestJS `MenusModule`, `MenusController`, and `MenusService` supporting CRUD, atomic item updates in transactions, catalogue price/cost/tag snapshotting, menu duplication ("Copy of ..."), status transitions (`active`, `draft`, `archived`), and audit logging.
+- **Shared Contracts**: Zod schemas and TypeScript types in `@catering/shared-types` (`menuSchema`, `menuItemSchema`, `createMenuRequestSchema`, `updateMenuRequestSchema`, etc.).
+- **Frontend**: Next.js 16 App Router UI under `/tenant/[tenantSlug]/menus` adhering to the Executive Monochrome theme:
+  - Worklist table with search, status tabs, service style filter, and metrics cards.
+  - Interactive Menu Builder (`new` and `edit`) supporting course/section grouping, modal-based catalogue item browsing, custom items, item quantity/price overrides, reordering, and real-time indicative economics & gross margin calculator.
+  - Presentation detail view (`[menuId]`) showing structured courses, dietary tag coverage, operational notes, and duplication actions.
+  - Activated "Menus" in `TenantSidebar`.

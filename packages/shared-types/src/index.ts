@@ -527,6 +527,29 @@ export const catalogueImportStatusSchema = z.enum([
   "partially_failed",
 ]);
 
+export const catalogueItemImageSchema = z.object({
+  id: z.string().uuid(),
+  itemId: z.string().uuid(),
+  url: z.string(),
+  caption: z.string().nullable().optional(),
+  isPrimary: z.boolean().default(false),
+  order: z.number().int().nonnegative().default(0),
+  createdAt: z.string().datetime(),
+});
+
+export const addCatalogueItemImageRequestSchema = z.object({
+  url: z.string().min(1),
+  caption: z.string().max(255).optional(),
+  isPrimary: z.boolean().optional(),
+});
+
+export const uploadCatalogueItemImageRequestSchema = z.object({
+  fileBase64: z.string().min(1),
+  filename: z.string().min(1).max(255),
+  caption: z.string().max(255).optional(),
+  isPrimary: z.boolean().optional(),
+});
+
 export const catalogueItemSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).max(200),
@@ -538,6 +561,8 @@ export const catalogueItemSchema = z.object({
   dietaryTags: z.array(z.string()),
   minQuantity: z.number().int().positive().nullable(),
   isArchived: z.boolean(),
+  images: z.array(catalogueItemImageSchema).default([]),
+  primaryImageUrl: z.string().nullable().optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -642,4 +667,113 @@ export type CatalogueImportRowError = z.infer<typeof catalogueImportRowErrorSche
 export type CatalogueImportRequest = z.infer<typeof catalogueImportRequestSchema>;
 export type CatalogueImportResult = z.infer<typeof catalogueImportResultSchema>;
 export type CatalogueImportJob = z.infer<typeof catalogueImportJobSchema>;
+export type CatalogueItemImage = z.infer<typeof catalogueItemImageSchema>;
+export type AddCatalogueItemImageRequest = z.infer<typeof addCatalogueItemImageRequestSchema>;
+export type UploadCatalogueItemImageRequest = z.infer<typeof uploadCatalogueItemImageRequestSchema>;
+
+// --- MEN-001: Menu Builder ---
+
+export const menuStatusSchema = z.enum(["draft", "active", "archived"]);
+
+export const menuItemSchema = z.object({
+  id: z.string().uuid(),
+  menuId: z.string().uuid(),
+  catalogueItemId: z.string().uuid().nullable().optional(),
+  section: z.string().min(1).max(100).default("General"),
+  name: z.string().min(1).max(200),
+  description: z.string().nullable().optional(),
+  quantity: z.number().positive().default(1),
+  unitPrice: z.number().nonnegative().default(0),
+  costPrice: z.number().nonnegative().nullable().optional(),
+  dietaryTags: z.array(z.string()).default([]),
+  sortOrder: z.number().int().nonnegative().default(0),
+  servingNotes: z.string().nullable().optional(),
+  createdAt: z.string().datetime().optional(),
+  updatedAt: z.string().datetime().optional(),
+});
+
+export const menuItemInputSchema = z.object({
+  id: z.string().uuid().optional(),
+  catalogueItemId: z.string().uuid().nullable().optional(),
+  section: z.string().min(1).max(100).default("General"),
+  name: z.string().min(1).max(200),
+  description: z.string().nullable().optional(),
+  quantity: z.number().positive().optional().default(1),
+  unitPrice: z.number().nonnegative().optional().default(0),
+  costPrice: z.number().nonnegative().nullable().optional(),
+  dietaryTags: z.array(z.string()).optional().default([]),
+  sortOrder: z.number().int().nonnegative().optional().default(0),
+  servingNotes: z.string().nullable().optional(),
+});
+
+export const menuSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(200),
+  description: z.string().nullable().optional(),
+  serviceStyle: z.string().nullable().optional(),
+  status: menuStatusSchema,
+  minGuests: z.number().int().positive().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  items: z.array(menuItemSchema).default([]),
+  itemsCount: z.number().int().nonnegative().optional(),
+  totalSellingPrice: z.number().nonnegative().optional(),
+  totalCostPrice: z.number().nonnegative().nullable().optional(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export const createMenuRequestSchema = z.object({
+  name: z.string().min(1).max(200),
+  description: z.string().max(2000).optional(),
+  serviceStyle: z.string().max(60).optional(),
+  status: menuStatusSchema.default("active"),
+  minGuests: z.number().int().positive().nullable().optional(),
+  notes: z.string().max(2000).optional(),
+  items: z.array(menuItemInputSchema).default([]),
+});
+
+export const updateMenuRequestSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  description: z.string().max(2000).nullable().optional(),
+  serviceStyle: z.string().max(60).nullable().optional(),
+  status: menuStatusSchema.optional(),
+  minGuests: z.number().int().positive().nullable().optional(),
+  notes: z.string().max(2000).nullable().optional(),
+  items: z.array(menuItemInputSchema).optional(),
+});
+
+export const duplicateMenuRequestSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+});
+
+export const menuSearchParamsSchema = z.object({
+  search: z.string().optional(),
+  status: z.enum(["active", "draft", "archived", "all"]).optional(),
+  serviceStyle: z.string().optional(),
+});
+
+export const menuListStatsSchema = z.object({
+  totalMenus: z.number().int().nonnegative(),
+  activeMenus: z.number().int().nonnegative(),
+  draftMenus: z.number().int().nonnegative(),
+  archivedMenus: z.number().int().nonnegative(),
+});
+
+export const menuListResponseSchema = z.object({
+  data: z.array(menuSchema),
+  total: z.number().int().nonnegative(),
+  stats: menuListStatsSchema.optional(),
+});
+
+export type MenuStatus = z.infer<typeof menuStatusSchema>;
+export type MenuItem = z.infer<typeof menuItemSchema>;
+export type MenuItemInput = z.input<typeof menuItemInputSchema>;
+export type Menu = z.infer<typeof menuSchema>;
+export type CreateMenuRequest = z.input<typeof createMenuRequestSchema>;
+export type UpdateMenuRequest = z.input<typeof updateMenuRequestSchema>;
+export type DuplicateMenuRequest = z.infer<typeof duplicateMenuRequestSchema>;
+export type MenuSearchParams = z.infer<typeof menuSearchParamsSchema>;
+export type MenuListStats = z.infer<typeof menuListStatsSchema>;
+export type MenuListResponse = z.infer<typeof menuListResponseSchema>;
+
 

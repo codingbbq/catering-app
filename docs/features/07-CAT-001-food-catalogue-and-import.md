@@ -20,6 +20,7 @@ Create a reusable tenant-specific food catalogue that reduces repetitive data en
 
 - create, edit, archive, and search catalogue items
 - categorize items and store relevant commercial attributes
+- support multiple photo uploads for each dish with primary cover selection and deletion
 - support bulk import from a defined tabular format
 - validate import rows and provide import result feedback
 - allow catalogue items to be referenced by menus, recipes, and quotations
@@ -27,19 +28,21 @@ Create a reusable tenant-specific food catalogue that reduces repetitive data en
 ## User stories
 
 - As a sales user, I want to reuse saved food items when preparing menus.
+- As a sales user, I want to view multiple high-quality photos of each dish so I can present appetizing menu options to clients.
 - As a business admin, I want to import my existing catalogue from a spreadsheet.
 - As an operations user, I want consistent item naming across menus and costing.
 
 ## UI screens and interactions
 
-- catalogue list screen
-- catalogue item detail/create/edit form
+- catalogue list screen with image thumbnails
+- catalogue item detail/create/edit form with multi-photo upload gallery
 - import upload and validation results screen
 - archive/reactivate actions
 
 ## Data model changes
 
 - `CatalogueItem`
+- `CatalogueItemImage` (multiple images per item, url, caption, isPrimary, order)
 - `CatalogueImportJob`
 - optional import row/result detail table if required
 
@@ -49,6 +52,10 @@ Create a reusable tenant-specific food catalogue that reduces repetitive data en
 - `POST /catalogue-items`
 - `GET /catalogue-items/:itemId`
 - `PATCH /catalogue-items/:itemId`
+- `POST /catalogue-items/:itemId/images`
+- `POST /catalogue-items/:itemId/images/upload`
+- `DELETE /catalogue-items/:itemId/images/:imageId`
+- `PATCH /catalogue-items/:itemId/images/:imageId/primary`
 - `POST /catalogue-imports`
 - `GET /catalogue-imports/:importJobId`
 

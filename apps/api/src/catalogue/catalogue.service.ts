@@ -1,14 +1,19 @@
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import type {
+  AddCatalogueItemImageRequest,
   CatalogueImportJob,
   CatalogueImportRequest,
   CatalogueImportResult,
   CatalogueImportRowError,
   CatalogueItem,
+  CatalogueItemImage,
   CatalogueItemListResponse,
   CatalogueSearchParams,
   CreateCatalogueItemRequest,
   PricingUnit,
   UpdateCatalogueItemRequest,
+  UploadCatalogueItemImageRequest,
 } from '@catering/shared-types';
 import {
   BadRequestException,
@@ -71,6 +76,11 @@ export class CatalogueService {
     const [items, total, allItemsForStats] = await Promise.all([
       this.prisma.catalogueItem.findMany({
         where,
+        include: {
+          images: {
+            orderBy: [{ isPrimary: 'desc' }, { order: 'asc' }, { createdAt: 'asc' }],
+          },
+        },
         orderBy: [{ isArchived: 'asc' }, { category: 'asc' }, { name: 'asc' }],
       }),
       this.prisma.catalogueItem.count({ where }),
@@ -84,20 +94,36 @@ export class CatalogueService {
     const archivedCount = allItemsForStats.filter((i) => i.isArchived).length;
     const uniqueCategories = new Set(allItemsForStats.map((i) => i.category.toLowerCase()));
 
-    const data: CatalogueItem[] = items.map((item) => ({
-      id: item.id,
-      name: item.name,
-      description: item.description,
-      category: item.category,
-      pricingUnit: item.pricingUnit as PricingUnit,
-      costPrice: item.costPrice ? Number(item.costPrice) : null,
-      sellingPrice: Number(item.sellingPrice),
-      dietaryTags: item.dietaryTags,
-      minQuantity: item.minQuantity,
-      isArchived: item.isArchived,
-      createdAt: item.createdAt.toISOString(),
-      updatedAt: item.updatedAt.toISOString(),
-    }));
+    const data: CatalogueItem[] = items.map((item) => {
+      const images: CatalogueItemImage[] = (item.images || []).map((img) => ({
+        id: img.id,
+        itemId: img.itemId,
+        url: img.url,
+        caption: img.caption,
+        isPrimary: img.isPrimary,
+        order: img.order,
+        createdAt: img.createdAt.toISOString(),
+      }));
+
+      const primaryImg = images.find((i) => i.isPrimary) || images[0] || null;
+
+      return {
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        category: item.category,
+        pricingUnit: item.pricingUnit as PricingUnit,
+        costPrice: item.costPrice ? Number(item.costPrice) : null,
+        sellingPrice: Number(item.sellingPrice),
+        dietaryTags: item.dietaryTags,
+        minQuantity: item.minQuantity,
+        isArchived: item.isArchived,
+        images,
+        primaryImageUrl: primaryImg ? primaryImg.url : null,
+        createdAt: item.createdAt.toISOString(),
+        updatedAt: item.updatedAt.toISOString(),
+      };
+    });
 
     return {
       data,
@@ -114,11 +140,28 @@ export class CatalogueService {
   async getItemById(tenantId: string, itemId: string): Promise<CatalogueItem> {
     const item = await this.prisma.catalogueItem.findFirst({
       where: { id: itemId, tenantId },
+      include: {
+        images: {
+          orderBy: [{ isPrimary: 'desc' }, { order: 'asc' }, { createdAt: 'asc' }],
+        },
+      },
     });
 
     if (!item) {
       throw new NotFoundException(`Catalogue item not found: ${itemId}`);
     }
+
+    const images: CatalogueItemImage[] = (item.images || []).map((img) => ({
+      id: img.id,
+      itemId: img.itemId,
+      url: img.url,
+      caption: img.caption,
+      isPrimary: img.isPrimary,
+      order: img.order,
+      createdAt: img.createdAt.toISOString(),
+    }));
+
+    const primaryImg = images.find((i) => i.isPrimary) || images[0] || null;
 
     return {
       id: item.id,
@@ -131,6 +174,8 @@ export class CatalogueService {
       dietaryTags: item.dietaryTags,
       minQuantity: item.minQuantity,
       isArchived: item.isArchived,
+      images,
+      primaryImageUrl: primaryImg ? primaryImg.url : null,
       createdAt: item.createdAt.toISOString(),
       updatedAt: item.updatedAt.toISOString(),
     };
@@ -190,6 +235,8 @@ export class CatalogueService {
       dietaryTags: item.dietaryTags,
       minQuantity: item.minQuantity,
       isArchived: item.isArchived,
+      images: [],
+      primaryImageUrl: null,
       createdAt: item.createdAt.toISOString(),
       updatedAt: item.updatedAt.toISOString(),
     };
@@ -233,7 +280,7 @@ export class CatalogueService {
       updateData.isArchived = dto.isArchived;
     }
 
-    const updated = await this.prisma.catalogueItem.update({
+    await this.prisma.catalogueItem.update({
       where: { id: itemId },
       data: updateData,
     });
@@ -247,20 +294,7 @@ export class CatalogueService {
       metadata: { itemId, userId: userId || 'anonymous' },
     });
 
-    return {
-      id: updated.id,
-      name: updated.name,
-      description: updated.description,
-      category: updated.category,
-      pricingUnit: updated.pricingUnit as PricingUnit,
-      costPrice: updated.costPrice ? Number(updated.costPrice) : null,
-      sellingPrice: Number(updated.sellingPrice),
-      dietaryTags: updated.dietaryTags,
-      minQuantity: updated.minQuantity,
-      isArchived: updated.isArchived,
-      createdAt: updated.createdAt.toISOString(),
-      updatedAt: updated.updatedAt.toISOString(),
-    };
+    return this.getItemById(tenantId, itemId);
   }
 
   async toggleArchive(
@@ -271,7 +305,7 @@ export class CatalogueService {
   ): Promise<CatalogueItem> {
     await this.getItemById(tenantId, itemId);
 
-    const updated = await this.prisma.catalogueItem.update({
+    await this.prisma.catalogueItem.update({
       where: { id: itemId },
       data: { isArchived: archive },
     });
@@ -285,19 +319,182 @@ export class CatalogueService {
       metadata: { itemId, userId: userId || 'anonymous' },
     });
 
+    return this.getItemById(tenantId, itemId);
+  }
+
+  async addImage(
+    tenantId: string,
+    userId: string | undefined,
+    itemId: string,
+    dto: AddCatalogueItemImageRequest,
+  ): Promise<CatalogueItemImage> {
+    await this.getItemById(tenantId, itemId);
+
+    const existingImages = await this.prisma.catalogueItemImage.findMany({
+      where: { itemId },
+    });
+
+    const isFirst = existingImages.length === 0;
+    const shouldBePrimary = dto.isPrimary ?? isFirst;
+
+    if (shouldBePrimary && existingImages.length > 0) {
+      await this.prisma.catalogueItemImage.updateMany({
+        where: { itemId },
+        data: { isPrimary: false },
+      });
+    }
+
+    const created = await this.prisma.catalogueItemImage.create({
+      data: {
+        itemId,
+        url: dto.url.trim(),
+        caption: dto.caption?.trim() || null,
+        isPrimary: shouldBePrimary,
+        order: existingImages.length,
+      },
+    });
+
+    this.auditLogService.record({
+      scope: 'tenant',
+      tenantId,
+      actorType: 'tenant_user',
+      action: 'catalogue.image_added',
+      outcome: 'allowed',
+      metadata: { itemId, imageId: created.id, userId: userId || 'anonymous' },
+    });
+
     return {
-      id: updated.id,
-      name: updated.name,
-      description: updated.description,
-      category: updated.category,
-      pricingUnit: updated.pricingUnit as PricingUnit,
-      costPrice: updated.costPrice ? Number(updated.costPrice) : null,
-      sellingPrice: Number(updated.sellingPrice),
-      dietaryTags: updated.dietaryTags,
-      minQuantity: updated.minQuantity,
-      isArchived: updated.isArchived,
-      createdAt: updated.createdAt.toISOString(),
-      updatedAt: updated.updatedAt.toISOString(),
+      id: created.id,
+      itemId: created.itemId,
+      url: created.url,
+      caption: created.caption,
+      isPrimary: created.isPrimary,
+      order: created.order,
+      createdAt: created.createdAt.toISOString(),
+    };
+  }
+
+  async uploadImage(
+    tenantId: string,
+    userId: string | undefined,
+    itemId: string,
+    dto: UploadCatalogueItemImageRequest,
+  ): Promise<CatalogueItemImage> {
+    await this.getItemById(tenantId, itemId);
+
+    const uploadsDir = resolve(process.cwd(), 'uploads', 'catalogue');
+    if (!existsSync(uploadsDir)) {
+      mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    const ext = (dto.filename.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cleanExt = ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext) ? ext : 'jpg';
+    const baseName = dto.filename.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 50);
+    const filename = `${itemId}-${Date.now()}-${baseName}.${cleanExt}`;
+    const filePath = join(uploadsDir, filename);
+
+    const base64Data = dto.fileBase64.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+    writeFileSync(filePath, buffer);
+
+    const url = `/uploads/catalogue/${filename}`;
+
+    return this.addImage(tenantId, userId, itemId, {
+      url,
+      caption: dto.caption,
+      isPrimary: dto.isPrimary,
+    });
+  }
+
+  async deleteImage(
+    tenantId: string,
+    userId: string | undefined,
+    itemId: string,
+    imageId: string,
+  ): Promise<{ success: boolean }> {
+    await this.getItemById(tenantId, itemId);
+
+    const image = await this.prisma.catalogueItemImage.findFirst({
+      where: { id: imageId, itemId },
+    });
+
+    if (!image) {
+      throw new NotFoundException(`Catalogue image not found: ${imageId}`);
+    }
+
+    await this.prisma.catalogueItemImage.delete({
+      where: { id: imageId },
+    });
+
+    if (image.isPrimary) {
+      const remaining = await this.prisma.catalogueItemImage.findFirst({
+        where: { itemId },
+        orderBy: { order: 'asc' },
+      });
+      if (remaining) {
+        await this.prisma.catalogueItemImage.update({
+          where: { id: remaining.id },
+          data: { isPrimary: true },
+        });
+      }
+    }
+
+    this.auditLogService.record({
+      scope: 'tenant',
+      tenantId,
+      actorType: 'tenant_user',
+      action: 'catalogue.image_deleted',
+      outcome: 'allowed',
+      metadata: { itemId, imageId, userId: userId || 'anonymous' },
+    });
+
+    return { success: true };
+  }
+
+  async setPrimaryImage(
+    tenantId: string,
+    userId: string | undefined,
+    itemId: string,
+    imageId: string,
+  ): Promise<CatalogueItemImage> {
+    await this.getItemById(tenantId, itemId);
+
+    const image = await this.prisma.catalogueItemImage.findFirst({
+      where: { id: imageId, itemId },
+    });
+
+    if (!image) {
+      throw new NotFoundException(`Catalogue image not found: ${imageId}`);
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.catalogueItemImage.updateMany({
+        where: { itemId },
+        data: { isPrimary: false },
+      }),
+      this.prisma.catalogueItemImage.update({
+        where: { id: imageId },
+        data: { isPrimary: true },
+      }),
+    ]);
+
+    this.auditLogService.record({
+      scope: 'tenant',
+      tenantId,
+      actorType: 'tenant_user',
+      action: 'catalogue.image_set_primary',
+      outcome: 'allowed',
+      metadata: { itemId, imageId, userId: userId || 'anonymous' },
+    });
+
+    return {
+      id: image.id,
+      itemId: image.itemId,
+      url: image.url,
+      caption: image.caption,
+      isPrimary: true,
+      order: image.order,
+      createdAt: image.createdAt.toISOString(),
     };
   }
 

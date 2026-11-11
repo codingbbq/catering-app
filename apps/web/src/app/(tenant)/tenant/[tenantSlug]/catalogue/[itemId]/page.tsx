@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { CatalogueImageGallery } from "@/features/catalogue/catalogue-image-gallery";
 import { CatalogueItemForm } from "@/features/catalogue/catalogue-item-form";
 import {
   archiveCatalogueItem,
@@ -139,6 +140,25 @@ export default function CatalogueItemDetailPage() {
         </div>
       )}
 
+      {/* Photo Gallery Card */}
+      <Card>
+        <CardContent className="p-6">
+          <CatalogueImageGallery
+            itemId={itemId}
+            images={item.images || []}
+            onImagesChange={() => {
+              queryClient.invalidateQueries({
+                queryKey: ["tenant", tenantSlug, "catalogue", itemId],
+              });
+              queryClient.invalidateQueries({
+                queryKey: ["tenant", tenantSlug, "catalogue"],
+              });
+            }}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Item Details Form */}
       <Card>
         <CardContent className="p-6">
           <CatalogueItemForm

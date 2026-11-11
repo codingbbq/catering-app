@@ -22,11 +22,20 @@ describe('CatalogueService', () => {
         createMany: vi.fn(),
         update: vi.fn(),
       } as unknown as PrismaService['catalogueItem'],
+      catalogueItemImage: {
+        findMany: vi.fn(),
+        findFirst: vi.fn(),
+        create: vi.fn(),
+        delete: vi.fn(),
+        update: vi.fn(),
+        updateMany: vi.fn(),
+      } as unknown as PrismaService['catalogueItemImage'],
       catalogueImportJob: {
         findMany: vi.fn(),
         findFirst: vi.fn(),
         create: vi.fn(),
       } as unknown as PrismaService['catalogueImportJob'],
+      $transaction: vi.fn().mockImplementation((promises: Promise<unknown>[]) => Promise.all(promises)),
     };
 
     auditLogService = {
@@ -156,21 +165,39 @@ describe('CatalogueService', () => {
 
   describe('toggleArchive', () => {
     it('archives item and records audit log', async () => {
-      (prisma.catalogueItem!.findFirst as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-        id: 'item-1',
-        tenantId,
-        name: 'Seasonal Soup',
-        description: null,
-        category: 'starter',
-        pricingUnit: 'per_person',
-        costPrice: null,
-        sellingPrice: 5.0,
-        dietaryTags: [],
-        minQuantity: null,
-        isArchived: false,
-        createdAt: new Date('2026-01-01T00:00:00Z'),
-        updatedAt: new Date('2026-01-01T00:00:00Z'),
-      });
+      (prisma.catalogueItem!.findFirst as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({
+          id: 'item-1',
+          tenantId,
+          name: 'Seasonal Soup',
+          description: null,
+          category: 'starter',
+          pricingUnit: 'per_person',
+          costPrice: null,
+          sellingPrice: 5.0,
+          dietaryTags: [],
+          minQuantity: null,
+          isArchived: false,
+          images: [],
+          createdAt: new Date('2026-01-01T00:00:00Z'),
+          updatedAt: new Date('2026-01-01T00:00:00Z'),
+        })
+        .mockResolvedValueOnce({
+          id: 'item-1',
+          tenantId,
+          name: 'Seasonal Soup',
+          description: null,
+          category: 'starter',
+          pricingUnit: 'per_person',
+          costPrice: null,
+          sellingPrice: 5.0,
+          dietaryTags: [],
+          minQuantity: null,
+          isArchived: true,
+          images: [],
+          createdAt: new Date('2026-01-01T00:00:00Z'),
+          updatedAt: new Date('2026-01-01T00:00:00Z'),
+        });
 
       (prisma.catalogueItem!.update as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         id: 'item-1',
@@ -261,6 +288,87 @@ describe('CatalogueService', () => {
           expect.objectContaining({ name: 'Beef Tenderloin' }),
           expect.objectContaining({ name: 'Greek Salad' }),
         ]),
+      });
+    });
+  });
+
+  describe('image operations', () => {
+    const mockItem = {
+      id: 'item-1',
+      tenantId,
+      name: 'Salmon',
+      category: 'main',
+      pricingUnit: 'per_person',
+      sellingPrice: 20,
+      dietaryTags: [],
+      isArchived: false,
+      images: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it('adds an image to a dish and sets primary if first image', async () => {
+      (prisma.catalogueItem!.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockItem);
+      (prisma.catalogueItemImage!.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      (prisma.catalogueItemImage!.create as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'img-1',
+        itemId: 'item-1',
+        url: 'https://example.com/salmon.jpg',
+        caption: 'Plated dish',
+        isPrimary: true,
+        order: 0,
+        createdAt: new Date(),
+      });
+
+      const result = await service.addImage(tenantId, userId, 'item-1', {
+        url: 'https://example.com/salmon.jpg',
+        caption: 'Plated dish',
+      });
+
+      expect(result.id).toBe('img-1');
+      expect(result.isPrimary).toBe(true);
+      expect(auditLogService.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'catalogue.image_added',
+        }),
+      );
+    });
+
+    it('sets an image as primary', async () => {
+      (prisma.catalogueItem!.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockItem);
+      (prisma.catalogueItemImage!.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'img-2',
+        itemId: 'item-1',
+        url: 'https://example.com/salmon-2.jpg',
+        caption: null,
+        isPrimary: false,
+        order: 1,
+        createdAt: new Date(),
+      });
+
+      const result = await service.setPrimaryImage(tenantId, userId, 'item-1', 'img-2');
+      expect(result.isPrimary).toBe(true);
+      expect(prisma.catalogueItemImage!.updateMany).toHaveBeenCalledWith({
+        where: { itemId: 'item-1' },
+        data: { isPrimary: false },
+      });
+    });
+
+    it('deletes an image', async () => {
+      (prisma.catalogueItem!.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockItem);
+      (prisma.catalogueItemImage!.findFirst as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({
+          id: 'img-1',
+          itemId: 'item-1',
+          isPrimary: false,
+        })
+        .mockResolvedValueOnce(null);
+      (prisma.catalogueItemImage!.delete as ReturnType<typeof vi.fn>).mockResolvedValue({});
+
+      const result = await service.deleteImage(tenantId, userId, 'item-1', 'img-1');
+      expect(result.success).toBe(true);
+      expect(prisma.catalogueItemImage!.delete).toHaveBeenCalledWith({
+        where: { id: 'img-1' },
       });
     });
   });

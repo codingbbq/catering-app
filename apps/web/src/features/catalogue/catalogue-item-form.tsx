@@ -224,6 +224,11 @@ export function CatalogueItemForm({
             placeholder="Item ingredients, presentation style, or preparation notes..."
             className="w-full rounded border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#171717] placeholder-[#A3A3A3] focus:border-[#171717] focus:outline-none"
           />
+          {!initialData && (
+            <p className="mt-1.5 text-[11px] text-[#737373]">
+              📸 You can upload multiple dish photos and select a cover image directly in the dish editor after creation.
+            </p>
+          )}
         </div>
       </div>
 

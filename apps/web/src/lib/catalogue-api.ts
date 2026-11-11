@@ -1,12 +1,15 @@
 import type {
+  AddCatalogueItemImageRequest,
   CatalogueImportJob,
   CatalogueImportRequest,
   CatalogueImportResult,
   CatalogueItem,
+  CatalogueItemImage,
   CatalogueItemListResponse,
   CatalogueSearchParams,
   CreateCatalogueItemRequest,
   UpdateCatalogueItemRequest,
+  UploadCatalogueItemImageRequest,
 } from "@catering/shared-types";
 import { apiFetch } from "./api-client";
 
@@ -93,4 +96,50 @@ export function getImportJob(
   token: string,
 ): Promise<CatalogueImportJob> {
   return apiFetch(`/catalogue-imports/${jobId}`, { token });
+}
+
+export function uploadCatalogueItemImage(
+  itemId: string,
+  dto: UploadCatalogueItemImageRequest,
+  token: string,
+): Promise<CatalogueItemImage> {
+  return apiFetch(`/catalogue-items/${itemId}/images/upload`, {
+    method: "POST",
+    body: JSON.stringify(dto),
+    token,
+  });
+}
+
+export function addCatalogueItemImage(
+  itemId: string,
+  dto: AddCatalogueItemImageRequest,
+  token: string,
+): Promise<CatalogueItemImage> {
+  return apiFetch(`/catalogue-items/${itemId}/images`, {
+    method: "POST",
+    body: JSON.stringify(dto),
+    token,
+  });
+}
+
+export function deleteCatalogueItemImage(
+  itemId: string,
+  imageId: string,
+  token: string,
+): Promise<{ success: boolean }> {
+  return apiFetch(`/catalogue-items/${itemId}/images/${imageId}`, {
+    method: "DELETE",
+    token,
+  });
+}
+
+export function setPrimaryCatalogueItemImage(
+  itemId: string,
+  imageId: string,
+  token: string,
+): Promise<CatalogueItemImage> {
+  return apiFetch(`/catalogue-items/${itemId}/images/${imageId}/primary`, {
+    method: "PATCH",
+    token,
+  });
 }
