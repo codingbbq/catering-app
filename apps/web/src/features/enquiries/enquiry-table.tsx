@@ -28,7 +28,7 @@ const SERVICE_LABELS: Record<string, string> = {
 };
 
 export function EnquiryTable({ data, tenantSlug }: EnquiryTableProps) {
-  const [sorting, setSorting] = useState<SortingState>([{ id: "createdAt", desc: true }]);
+  const [sorting, setSorting] = useState<SortingState>([]);
 
   const columns = useMemo(
     () => [

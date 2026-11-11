@@ -49,13 +49,22 @@ export default function TenantDashboardPage() {
         description="Daily catering operations, client accounts, menus, and event management."
         badge={<StatusBadge variant="success">Workspace Active</StatusBadge>}
         actions={
-          <Link
-            href={`/tenant/${tenantSlug}/customers/new`}
-            className="inline-flex items-center gap-1.5 rounded bg-[#171717] px-3.5 py-2 text-xs font-medium text-white hover:bg-[#262626] transition-colors"
-          >
-            <span className="text-sm leading-none">+</span>
-            <span>New Customer</span>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/tenant/${tenantSlug}/enquiries/new`}
+              className="inline-flex items-center gap-1.5 rounded bg-[#171717] px-3.5 py-2 text-xs font-medium text-white hover:bg-[#262626] transition-colors"
+            >
+              <span className="text-sm leading-none">+</span>
+              <span>New Enquiry</span>
+            </Link>
+            <Link
+              href={`/tenant/${tenantSlug}/customers/new`}
+              className="inline-flex items-center gap-1.5 rounded border border-[#E5E5E5] bg-white px-3.5 py-2 text-xs font-medium text-[#262626] hover:bg-[#FAFAFA] transition-colors"
+            >
+              <span className="text-sm leading-none">+</span>
+              <span>New Customer</span>
+            </Link>
+          </div>
         }
       />
 
@@ -104,6 +113,24 @@ export default function TenantDashboardPage() {
             <h4 className="mt-4 text-sm font-semibold text-[#171717]">Customers &amp; Contacts</h4>
             <p className="mt-1 text-xs text-[#737373] leading-relaxed">
               Manage client accounts, corporate accounts, key contact persons, and address records.
+            </p>
+          </Link>
+
+          <Link
+            href={`/tenant/${tenantSlug}/enquiries`}
+            className="group rounded-lg border border-[#E5E5E5] bg-white p-5 hover:border-[#171717] transition-all"
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex h-8 w-8 items-center justify-center rounded bg-[#FAFAFA] border border-[#E5E5E5] text-[#171717] group-hover:bg-[#171717] group-hover:text-white transition-colors">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                </svg>
+              </div>
+              <StatusBadge variant="success">Active</StatusBadge>
+            </div>
+            <h4 className="mt-4 text-sm font-semibold text-[#171717]">Sales Enquiries &amp; Pipeline</h4>
+            <p className="mt-1 text-xs text-[#737373] leading-relaxed">
+              Capture event opportunities, qualify leads, track timeline history, and prepare quotations.
             </p>
           </Link>
 
