@@ -4,6 +4,8 @@ import { TenantSidebar } from "@/features/tenancy/tenant-sidebar";
 import { TenantProvider } from "@/features/tenancy/tenant-provider";
 import { UserNav } from "@/features/auth/user-nav";
 
+export const instant = false;
+
 export default async function TenantLayout({
   children,
   params,

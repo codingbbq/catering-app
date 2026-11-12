@@ -1425,4 +1425,363 @@ export function calculateQuotationTotals(input: {
   };
 }
 
+// --- BKG-001: Booking Management ---
+
+export const bookingStatusSchema = z.enum([
+  "draft",
+  "confirmed",
+  "in_progress",
+  "completed",
+  "cancelled",
+]);
+export type BookingStatus = z.infer<typeof bookingStatusSchema>;
+
+export const bookingScheduleItemInputSchema = z.object({
+  id: z.string().uuid().optional(),
+  title: z.string().min(1, "Milestone title is required"),
+  scheduledDate: z.string().min(1, "Scheduled date is required"),
+  startTime: z.string().nullable().optional(),
+  endTime: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  location: z.string().nullable().optional(),
+  sortOrder: z.number().int().default(0),
+});
+export type BookingScheduleItemInput = z.infer<typeof bookingScheduleItemInputSchema>;
+
+export const bookingScheduleItemSchema = z.object({
+  id: z.string().uuid(),
+  bookingId: z.string().uuid(),
+  title: z.string(),
+  scheduledDate: z.string(),
+  startTime: z.string().nullable().optional(),
+  endTime: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  location: z.string().nullable().optional(),
+  sortOrder: z.number().int(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type BookingScheduleItem = z.infer<typeof bookingScheduleItemSchema>;
+
+export const createBookingRequestSchema = z.object({
+  title: z.string().min(1, "Booking title is required"),
+  customerId: z.string().uuid("Valid customer is required"),
+  quotationId: z.string().uuid().nullable().optional(),
+  enquiryId: z.string().uuid().nullable().optional(),
+  serviceType: serviceTypeSchema.optional().default("event_catering"),
+  eventDate: z.string().min(1, "Event date is required"),
+  guestCount: z.number().int().positive().nullable().optional(),
+  venueName: z.string().nullable().optional(),
+  venueAddress: z.string().nullable().optional(),
+  contactName: z.string().nullable().optional(),
+  contactPhone: z.string().nullable().optional(),
+  contactEmail: z.string().email().nullable().optional().or(z.literal("")),
+  specialInstructions: z.string().nullable().optional(),
+  totalAmount: z.number().nonnegative().optional().default(0),
+  currency: z.string().optional(),
+  status: z.enum(["draft", "confirmed"]).optional().default("confirmed"),
+  schedules: z.array(bookingScheduleItemInputSchema).optional().default([]),
+});
+export type CreateBookingRequest = z.input<typeof createBookingRequestSchema>;
+
+export const createBookingFromQuotationSchema = z.object({
+  quotationId: z.string().uuid("Quotation ID is required"),
+  title: z.string().optional(),
+  eventDate: z.string().optional(),
+  status: z.enum(["draft", "confirmed"]).optional().default("confirmed"),
+  venueName: z.string().nullable().optional(),
+  venueAddress: z.string().nullable().optional(),
+  contactName: z.string().nullable().optional(),
+  contactPhone: z.string().nullable().optional(),
+  contactEmail: z.string().nullable().optional(),
+  specialInstructions: z.string().nullable().optional(),
+  schedules: z.array(bookingScheduleItemInputSchema).optional(),
+});
+export type CreateBookingFromQuotationRequest = z.input<typeof createBookingFromQuotationSchema>;
+
+export const updateBookingRequestSchema = z.object({
+  title: z.string().min(1, "Title cannot be empty").optional(),
+  serviceType: serviceTypeSchema.optional(),
+  eventDate: z.string().min(1, "Event date cannot be empty").optional(),
+  guestCount: z.number().int().positive().nullable().optional(),
+  venueName: z.string().nullable().optional(),
+  venueAddress: z.string().nullable().optional(),
+  contactName: z.string().nullable().optional(),
+  contactPhone: z.string().nullable().optional(),
+  contactEmail: z.string().email().nullable().optional().or(z.literal("")),
+  specialInstructions: z.string().nullable().optional(),
+  totalAmount: z.number().nonnegative().optional(),
+  schedules: z.array(bookingScheduleItemInputSchema).optional(),
+});
+export type UpdateBookingRequest = z.input<typeof updateBookingRequestSchema>;
+
+export const confirmBookingRequestSchema = z.object({
+  notes: z.string().nullable().optional(),
+});
+export type ConfirmBookingRequest = z.input<typeof confirmBookingRequestSchema>;
+
+export const cancelBookingRequestSchema = z.object({
+  cancellationReason: z.string().min(1, "Cancellation reason is required"),
+});
+export type CancelBookingRequest = z.input<typeof cancelBookingRequestSchema>;
+
+export const bookingSearchParamsSchema = z.object({
+  search: z.string().optional(),
+  status: z.enum(["draft", "confirmed", "in_progress", "completed", "cancelled", "all"]).optional(),
+  customerId: z.string().uuid().optional(),
+  enquiryId: z.string().uuid().optional(),
+  quotationId: z.string().uuid().optional(),
+  fromDate: z.string().optional(),
+  toDate: z.string().optional(),
+  page: z.coerce.number().int().positive().optional().default(1),
+  limit: z.coerce.number().int().positive().optional().default(25),
+});
+export type BookingSearchParams = z.input<typeof bookingSearchParamsSchema>;
+
+export const bookingListItemSchema = z.object({
+  id: z.string().uuid(),
+  bookingNumber: z.string(),
+  title: z.string(),
+  status: bookingStatusSchema,
+  customerId: z.string().uuid(),
+  customerName: z.string(),
+  customerEmail: z.string().nullable().optional(),
+  customerPhone: z.string().nullable().optional(),
+  quotationId: z.string().uuid().nullable().optional(),
+  quotationNumber: z.string().nullable().optional(),
+  enquiryId: z.string().uuid().nullable().optional(),
+  enquiryNumber: z.string().nullable().optional(),
+  serviceType: serviceTypeSchema,
+  eventDate: z.string(),
+  guestCount: z.number().int().nullable().optional(),
+  venueName: z.string().nullable().optional(),
+  venueAddress: z.string().nullable().optional(),
+  totalAmount: z.number().nonnegative(),
+  currency: z.string(),
+  confirmedAt: z.string().nullable().optional(),
+  cancelledAt: z.string().nullable().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type BookingListItem = z.infer<typeof bookingListItemSchema>;
+
+export const bookingListStatsSchema = z.object({
+  totalBookings: z.number().int().nonnegative(),
+  confirmedCount: z.number().int().nonnegative(),
+  inProgressCount: z.number().int().nonnegative(),
+  completedCount: z.number().int().nonnegative(),
+  cancelledCount: z.number().int().nonnegative(),
+  draftCount: z.number().int().nonnegative(),
+  upcomingCount: z.number().int().nonnegative(),
+  totalConfirmedValue: z.number().nonnegative(),
+});
+export type BookingListStats = z.infer<typeof bookingListStatsSchema>;
+
+export const bookingListResponseSchema = z.object({
+  items: z.array(bookingListItemSchema),
+  stats: bookingListStatsSchema,
+  total: z.number().int().nonnegative(),
+});
+export type BookingListResponse = z.infer<typeof bookingListResponseSchema>;
+
+export const bookingDetailSchema = z.object({
+  id: z.string().uuid(),
+  tenantId: z.string().uuid(),
+  bookingNumber: z.string(),
+  title: z.string(),
+  status: bookingStatusSchema,
+  customerId: z.string().uuid(),
+  customer: z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    email: z.string().nullable().optional(),
+    phone: z.string().nullable().optional(),
+  }),
+  quotationId: z.string().uuid().nullable().optional(),
+  quotation: z
+    .object({
+      id: z.string().uuid(),
+      quotationNumber: z.string(),
+      title: z.string(),
+      status: quotationStatusSchema,
+      currentRevisionNumber: z.number().int(),
+    })
+    .nullable()
+    .optional(),
+  enquiryId: z.string().uuid().nullable().optional(),
+  enquiry: z
+    .object({
+      id: z.string().uuid(),
+      enquiryNumber: z.string(),
+      title: z.string(),
+    })
+    .nullable()
+    .optional(),
+  serviceType: serviceTypeSchema,
+  eventDate: z.string(),
+  guestCount: z.number().int().nullable().optional(),
+  venueName: z.string().nullable().optional(),
+  venueAddress: z.string().nullable().optional(),
+  contactName: z.string().nullable().optional(),
+  contactPhone: z.string().nullable().optional(),
+  contactEmail: z.string().nullable().optional(),
+  specialInstructions: z.string().nullable().optional(),
+  cancellationReason: z.string().nullable().optional(),
+  totalAmount: z.number().nonnegative(),
+  currency: z.string(),
+  confirmedAt: z.string().nullable().optional(),
+  cancelledAt: z.string().nullable().optional(),
+  schedules: z.array(bookingScheduleItemSchema),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type BookingDetail = z.infer<typeof bookingDetailSchema>;
+
+// ============================================================================
+// COM-001: Communication Hub Schemas and Types
+// ============================================================================
+
+export const communicationChannelSchema = z.enum([
+  "email",
+  "sms",
+  "whatsapp",
+  "internal_note",
+]);
+export type CommunicationChannel = z.infer<typeof communicationChannelSchema>;
+
+export const communicationDirectionSchema = z.enum(["outbound", "inbound"]);
+export type CommunicationDirection = z.infer<typeof communicationDirectionSchema>;
+
+export const communicationStatusSchema = z.enum([
+  "draft",
+  "pending",
+  "sent",
+  "delivered",
+  "failed",
+]);
+export type CommunicationStatus = z.infer<typeof communicationStatusSchema>;
+
+export const communicationTemplateItemSchema = z.object({
+  id: z.string().uuid(),
+  tenantId: z.string().uuid(),
+  name: z.string(),
+  channel: communicationChannelSchema,
+  category: z.string(),
+  subject: z.string().nullable().optional(),
+  body: z.string(),
+  isDefault: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type CommunicationTemplateItem = z.infer<typeof communicationTemplateItemSchema>;
+
+export const communicationItemSchema = z.object({
+  id: z.string().uuid(),
+  tenantId: z.string().uuid(),
+  customerId: z.string().uuid().nullable().optional(),
+  customer: z
+    .object({
+      id: z.string().uuid(),
+      name: z.string(),
+      email: z.string().nullable().optional(),
+      phone: z.string().nullable().optional(),
+    })
+    .nullable()
+    .optional(),
+  enquiryId: z.string().uuid().nullable().optional(),
+  enquiry: z
+    .object({
+      id: z.string().uuid(),
+      title: z.string(),
+    })
+    .nullable()
+    .optional(),
+  quotationId: z.string().uuid().nullable().optional(),
+  quotation: z
+    .object({
+      id: z.string().uuid(),
+      quotationNumber: z.string(),
+      title: z.string(),
+    })
+    .nullable()
+    .optional(),
+  bookingId: z.string().uuid().nullable().optional(),
+  booking: z
+    .object({
+      id: z.string().uuid(),
+      bookingNumber: z.string(),
+      title: z.string(),
+    })
+    .nullable()
+    .optional(),
+  channel: communicationChannelSchema,
+  direction: communicationDirectionSchema,
+  status: communicationStatusSchema,
+  recipient: z.string(),
+  sender: z.string().nullable().optional(),
+  subject: z.string().nullable().optional(),
+  content: z.string(),
+  metadata: z.record(z.string(), z.any()).nullable().optional(),
+  provider: z.string().nullable().optional(),
+  providerMessageId: z.string().nullable().optional(),
+  errorMessage: z.string().nullable().optional(),
+  retryCount: z.number().int().nonnegative(),
+  sentAt: z.string().nullable().optional(),
+  deliveredAt: z.string().nullable().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type CommunicationItem = z.infer<typeof communicationItemSchema>;
+
+export const createCommunicationSchema = z.object({
+  channel: communicationChannelSchema,
+  direction: communicationDirectionSchema.optional().default("outbound"),
+  status: communicationStatusSchema.optional().default("sent"),
+  recipient: z.string().min(1, "Recipient is required"),
+  sender: z.string().optional(),
+  subject: z.string().optional(),
+  content: z.string().min(1, "Content is required"),
+  customerId: z.string().uuid().optional().nullable(),
+  enquiryId: z.string().uuid().optional().nullable(),
+  quotationId: z.string().uuid().optional().nullable(),
+  bookingId: z.string().uuid().optional().nullable(),
+  metadata: z.record(z.string(), z.any()).optional().nullable(),
+  isDraft: z.boolean().optional().default(false),
+});
+export type CreateCommunicationRequest = z.infer<typeof createCommunicationSchema>;
+
+export const communicationFilterParamsSchema = z.object({
+  channel: z.enum(["all", "email", "sms", "whatsapp", "internal_note"]).optional(),
+  status: z.enum(["all", "draft", "pending", "sent", "delivered", "failed"]).optional(),
+  direction: z.enum(["all", "outbound", "inbound"]).optional(),
+  entityType: z.enum(["all", "enquiry", "quotation", "booking", "customer"]).optional(),
+  entityId: z.string().uuid().optional(),
+  search: z.string().optional(),
+  limit: z.number().int().positive().optional(),
+  offset: z.number().int().nonnegative().optional(),
+});
+export type CommunicationFilterParams = z.infer<typeof communicationFilterParamsSchema>;
+
+export const communicationStatsSchema = z.object({
+  total: z.number().int().nonnegative(),
+  sent: z.number().int().nonnegative(),
+  delivered: z.number().int().nonnegative(),
+  pending: z.number().int().nonnegative(),
+  failed: z.number().int().nonnegative(),
+  byChannel: z.object({
+    email: z.number().int().nonnegative(),
+    sms: z.number().int().nonnegative(),
+    whatsapp: z.number().int().nonnegative(),
+    internal_note: z.number().int().nonnegative(),
+  }),
+});
+export type CommunicationStats = z.infer<typeof communicationStatsSchema>;
+
+export const communicationListResponseSchema = z.object({
+  items: z.array(communicationItemSchema),
+  stats: communicationStatsSchema,
+  total: z.number().int().nonnegative(),
+});
+export type CommunicationListResponse = z.infer<typeof communicationListResponseSchema>;
+
 

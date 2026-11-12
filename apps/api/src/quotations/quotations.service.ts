@@ -829,6 +829,30 @@ export class QuotationsService {
       },
     });
 
+    try {
+      await this.prisma.communicationLog.create({
+        data: {
+          tenantId,
+          customerId: quotation.enquiry.customerId,
+          enquiryId: quotation.enquiryId,
+          quotationId: quotation.id,
+          channel: 'email',
+          direction: 'outbound',
+          status: 'delivered',
+          recipient,
+          sender: 'Sales Desk',
+          subject: `Quotation ${quotation.quotationNumber} (Rev ${targetRev.revisionNumber}) - ${quotation.title}`,
+          content: `Quotation ${quotation.quotationNumber} (Revision ${targetRev.revisionNumber}) for ${quotation.title} has been transmitted to ${recipient}.\nTotal: ${currency} ${Number(targetRev.totalAmount).toFixed(2)}.\n${dto?.sendNotes ? `Notes: ${dto.sendNotes}` : ''}`.trim(),
+          provider: 'mock',
+          providerMessageId: `mock_email_${Date.now()}_qtn`,
+          sentAt: new Date(),
+          deliveredAt: new Date(),
+        },
+      });
+    } catch {
+      // Non-blocking
+    }
+
     this.auditLogService.record({
       scope: 'tenant',
       tenantId,

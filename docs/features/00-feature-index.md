@@ -12,7 +12,7 @@
 | MEN-001 | Menu Builder | High | CAT-001 | COMPLETED | [MEN-001](./08-MEN-001-menu-builder.md) |
 | CST-001 | Costing Engine | Critical | CAT-001, MEN-001 | COMPLETED | [CST-001](./09-CST-001-costing-engine.md) |
 | QTN-001 | Quotations and Revisions | Critical | CRM-002, MEN-001, CST-001 | COMPLETED | [QTN-001](./10-QTN-001-quotations-and-revisions.md) |
-| BKG-001 | Booking Management | Critical | QTN-001 | NOT_STARTED | [BKG-001](./11-BKG-001-booking-management.md) |
+| BKG-001 | Booking Management | Critical | QTN-001 | COMPLETED | [BKG-001](./11-BKG-001-booking-management.md) |
 | COM-001 | Communication Hub | High | CRM-002, QTN-001, BKG-001 | NOT_STARTED | [COM-001](./12-COM-001-communication-hub.md) |
 | FIN-001 | Invoicing | Medium | BKG-001, DMO-001 | NOT_STARTED | [FIN-001](./13-FIN-001-invoicing.md) |
 | FIN-002 | Payments | Medium | FIN-001 | NOT_STARTED | [FIN-002](./14-FIN-002-payments.md) |

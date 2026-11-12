@@ -6,7 +6,7 @@
 
 ## Current feature
 
-- `QTN-001` Quotations and Revisions (Completed)
+- `BKG-001` Booking Management (Completed)
 
 ## Completed features
 
@@ -20,6 +20,7 @@
 - `MEN-001` Menu Builder
 - `CST-001` Costing Engine
 - `QTN-001` Quotations and Revisions
+- `BKG-001` Booking Management
 
 ## Features in progress
 
@@ -31,17 +32,18 @@
 
 ## Next recommended feature
 
-- `BKG-001` Booking Management
+- `COM-001` Communication Hub
 
 ## Current implementation baseline
 
 - pnpm workspace monorepo configured
 - Next.js 16 frontend with DaisyUI v5 executive monochrome theme
 - NestJS backend with tenant-scoped controllers, services, guards, and audit logging
-- Prisma/PostgreSQL schema with Tenant, User, Customer, Enquiry, CatalogueItem, CatalogueImportJob, Menu, MenuItem, Recipe, RecipeItem, CostSheet, CostSheetItem, Quotation, QuotationRevision, and QuotationLineItem models
-- Shared contracts, Zod schemas, and deterministic quotation and costing calculation engines in `@catering/shared-types`
+- Prisma/PostgreSQL schema with Tenant, User, Customer, Enquiry, CatalogueItem, CatalogueImportJob, Menu, MenuItem, Recipe, RecipeItem, CostSheet, CostSheetItem, Quotation, QuotationRevision, QuotationLineItem, Booking, and BookingSchedule models
+- Shared contracts, Zod schemas, and deterministic calculation engines in `@catering/shared-types`
 - Customer and Enquiry CRUD, timeline activities, status transitions, and qualification flows complete
 - Food catalogue worklist, item creation/editing, archive/reactivate, gross margin calculator, and CSV bulk importer with validation and job tracking complete
 - Menu builder worklist, course and section grouping, catalogue item browsing, custom dish configuration, real-time pricing and margin calculation, duplication, and archive/reactivate complete
 - Costing Engine with component-based Recipe management, yields, portion costs, full itemized Cost Sheets (ingredients, labor, overheads, buffers), deterministic calculation engine, and quick interactive margin simulator complete
 - Quotations & Revisions module with sequential numbering (`QT-YYYYMM-XXXX`), immutable revision history, Menu & Cost Sheet linkage, live itemized calculations, client presentation/print mode, send & acceptance flows, and CRM Enquiry conversion integration complete
+- Booking Management module with sequential numbering (`BK-YYYYMM-XXXX`), quotation-to-booking conversion, execution status lifecycle (`draft`, `confirmed`, `in_progress`, `completed`, `cancelled`), service schedule timeline milestones, operations table & calendar views, and CRM timeline activity integration complete

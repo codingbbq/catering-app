@@ -444,6 +444,134 @@ async function main() {
     console.log(`Seeded quotation: ${quote3.quotationNumber} (v1 draft)`);
   }
 
+  // --- Seed Demo Bookings ---
+  const existingBooking1 = await prisma.booking.findFirst({
+    where: { tenantId: tenant.id, bookingNumber: 'BK-202611-0001' },
+  });
+
+  if (!existingBooking1) {
+    const quote2 = await prisma.quotation.findFirst({
+      where: { tenantId: tenant.id, quotationNumber: 'QT-202611-0002' },
+    });
+
+    const booking1 = await prisma.booking.create({
+      data: {
+        tenantId: tenant.id,
+        bookingNumber: 'BK-202611-0001',
+        title: 'Sharma Wedding Reception Dinner Banquet',
+        status: 'confirmed',
+        customerId: customer2.id,
+        quotationId: quote2 ? quote2.id : null,
+        enquiryId: enquiry2 ? enquiry2.id : null,
+        serviceType: 'event_catering',
+        eventDate: new Date('2026-12-18T18:30:00Z'),
+        guestCount: 350,
+        venueName: 'The Leela Palace Royal Ballroom',
+        venueAddress: '23 HAL Airport Rd, Kodihalli, Bengaluru, Karnataka 560008',
+        contactName: 'Priya Sharma',
+        contactPhone: '+91 98111 22334',
+        contactEmail: 'priya.sharma@gmail.test',
+        specialInstructions: 'Live chaat station requires dedicated electrical phase (15A). 50 guests require Jain-compatible preparation.',
+        totalAmount: 432075.0,
+        currency: 'INR',
+        confirmedAt: new Date('2026-11-12T10:30:00Z'),
+        schedules: {
+          create: [
+            {
+              title: 'Kitchen & Service Load-in & Equipment Setup',
+              scheduledDate: new Date('2026-12-18T12:00:00Z'),
+              startTime: '12:00',
+              endTime: '15:00',
+              description: 'Service staff arrival, warming stations setup, live chaat counter prep',
+              location: 'Ballroom Service Kitchen & Back Lawn',
+              sortOrder: 0,
+            },
+            {
+              title: 'Welcome Mocktails & Live Appetizer Service',
+              scheduledDate: new Date('2026-12-18T18:00:00Z'),
+              startTime: '18:00',
+              endTime: '19:30',
+              description: 'Live pass-around appetizers, fresh fruit counters, welcome drinks',
+              location: 'Ballroom Foyer & Lawn',
+              sortOrder: 1,
+            },
+            {
+              title: 'Royal Indian Wedding Buffet Dinner',
+              scheduledDate: new Date('2026-12-18T19:45:00Z'),
+              startTime: '19:45',
+              endTime: '22:30',
+              description: 'Full buffet spread, live tandoori naan/roti station, dessert display',
+              location: 'Main Ballroom',
+              sortOrder: 2,
+            },
+            {
+              title: 'Station Packdown & Clean-up',
+              scheduledDate: new Date('2026-12-18T22:45:00Z'),
+              startTime: '22:45',
+              endTime: '23:45',
+              description: 'Clearing food stations, waste segregation, loading outbound vehicles',
+              location: 'Service Kitchen',
+              sortOrder: 3,
+            },
+          ],
+        },
+      },
+    });
+    console.log(`Seeded booking: ${booking1.bookingNumber} (${booking1.title} - confirmed)`);
+  }
+
+  const existingBooking2 = await prisma.booking.findFirst({
+    where: { tenantId: tenant.id, bookingNumber: 'BK-202611-0002' },
+  });
+
+  if (!existingBooking2) {
+    const booking2 = await prisma.booking.create({
+      data: {
+        tenantId: tenant.id,
+        bookingNumber: 'BK-202611-0002',
+        title: 'Apex Tech Summit VIP Networking Luncheon',
+        status: 'confirmed',
+        customerId: customer1.id,
+        enquiryId: enquiry1 ? enquiry1.id : null,
+        serviceType: 'event_catering',
+        eventDate: new Date('2026-11-28T12:30:00Z'),
+        guestCount: 120,
+        venueName: 'Apex Innovation Center Auditorium',
+        venueAddress: '42 Tech Park, Outer Ring Road, Bangalore',
+        contactName: 'Vikram Mehta',
+        contactPhone: '+91 98765 43210',
+        contactEmail: 'events@apextech.test',
+        specialInstructions: 'Buffet line must be operational promptly by 12:45 PM between keynote sessions.',
+        totalAmount: 185000.0,
+        currency: 'INR',
+        confirmedAt: new Date('2026-11-12T11:00:00Z'),
+        schedules: {
+          create: [
+            {
+              title: 'Kitchen Arrival & Lunch Buffet Prep',
+              scheduledDate: new Date('2026-11-28T10:00:00Z'),
+              startTime: '10:00',
+              endTime: '12:00',
+              description: 'Buffet setup in breakout area, coffee station prep',
+              location: 'Breakout Hall 2',
+              sortOrder: 0,
+            },
+            {
+              title: 'Networking Buffet Lunch Service',
+              scheduledDate: new Date('2026-11-28T12:30:00Z'),
+              startTime: '12:30',
+              endTime: '14:30',
+              description: 'Hot buffet lunch service with beverages and dessert',
+              location: 'Breakout Hall 2',
+              sortOrder: 1,
+            },
+          ],
+        },
+      },
+    });
+    console.log(`Seeded booking: ${booking2.bookingNumber} (${booking2.title} - confirmed)`);
+  }
+
   console.log('\nSeed complete. You can now sign in:');
   console.log('  Platform: POST /platform/auth/sign-in  { email: "admin@platform.test", password: "Admin@12345678" }');
   console.log(`  Tenant:   POST /auth/sign-in/${tenant.slug}  { email: "owner@demo.test", password: "Owner@12345678" }`);

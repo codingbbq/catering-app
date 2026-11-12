@@ -40,6 +40,9 @@ model Tenant {
   recipes     Recipe[]
   costSheets  CostSheet[]
   quotations  Quotation[]
+  bookings    Booking[]
+  communicationLogs CommunicationLog[]
+  communicationTemplates CommunicationTemplate[]
   auditLogs   AuditLog[]
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
@@ -174,6 +177,8 @@ model Customer {
   isActive    Boolean           @default(true)
   contacts    CustomerContact[]
   enquiries   Enquiry[]
+  bookings    Booking[]
+  communicationLogs CommunicationLog[]
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
@@ -245,6 +250,8 @@ model Enquiry {
   assignedTo      TenantUser?       @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
   activities      EnquiryActivity[]
   quotations      Quotation[]
+  bookings        Booking[]
+  communicationLogs CommunicationLog[]
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
@@ -544,6 +551,8 @@ model Quotation {
   notes                 String?
   terms                 String?
   revisions             QuotationRevision[]
+  bookings              Booking[]
+  communicationLogs     CommunicationLog[]
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
 
@@ -603,4 +612,151 @@ model QuotationLineItem {
   updatedAt   DateTime          @updatedAt
 
   @@index([revisionId])
+}
+
+// --- BKG-001: Booking Management ---
+
+enum BookingStatus {
+  draft
+  confirmed
+  in_progress
+  completed
+  cancelled
+}
+
+model Booking {
+  id                  String            @id @default(uuid())
+  tenantId            String
+  tenant              Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bookingNumber       String
+  title               String
+  status              BookingStatus     @default(draft)
+  customerId          String
+  customer            Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  quotationId         String?
+  quotation           Quotation?        @relation(fields: [quotationId], references: [id], onDelete: SetNull)
+  enquiryId           String?
+  enquiry             Enquiry?          @relation(fields: [enquiryId], references: [id], onDelete: SetNull)
+  serviceType         ServiceType       @default(event_catering)
+  eventDate           DateTime
+  guestCount          Int?
+  venueName           String?
+  venueAddress        String?
+  contactName         String?
+  contactPhone        String?
+  contactEmail        String?
+  specialInstructions String?
+  cancellationReason  String?
+  totalAmount         Decimal           @default(0.0) @db.Decimal(12, 2)
+  currency            String            @default("USD")
+  confirmedAt         DateTime?
+  cancelledAt         DateTime?
+  schedules           BookingSchedule[]
+  communicationLogs   CommunicationLog[]
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, eventDate])
+  @@index([bookingNumber])
+  @@index([customerId])
+  @@index([quotationId])
+  @@index([enquiryId])
+}
+
+model BookingSchedule {
+  id            String    @id @default(uuid())
+  bookingId     String
+  booking       Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  title         String
+  scheduledDate DateTime
+  startTime     String?
+  endTime       String?
+  description   String?
+  location      String?
+  sortOrder     Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([bookingId])
+  @@index([scheduledDate])
+}
+
+// --- COM-001: Communication Hub ---
+
+enum CommunicationChannel {
+  email
+  sms
+  whatsapp
+  internal_note
+}
+
+enum CommunicationDirection {
+  outbound
+  inbound
+}
+
+enum CommunicationStatus {
+  draft
+  pending
+  sent
+  delivered
+  failed
+}
+
+model CommunicationLog {
+  id                String                 @id @default(uuid())
+  tenantId          String
+  tenant            Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId        String?
+  customer          Customer?              @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  enquiryId         String?
+  enquiry           Enquiry?               @relation(fields: [enquiryId], references: [id], onDelete: SetNull)
+  quotationId       String?
+  quotation         Quotation?             @relation(fields: [quotationId], references: [id], onDelete: SetNull)
+  bookingId         String?
+  booking           Booking?               @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  channel           CommunicationChannel   @default(email)
+  direction         CommunicationDirection @default(outbound)
+  status            CommunicationStatus    @default(sent)
+  recipient         String
+  sender            String?
+  subject           String?
+  content           String                 @db.Text
+  metadata          Json?
+  provider          String?                @default("mock")
+  providerMessageId String?
+  errorMessage      String?
+  retryCount        Int                    @default(0)
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, channel])
+  @@index([tenantId, createdAt])
+  @@index([customerId])
+  @@index([enquiryId])
+  @@index([quotationId])
+  @@index([bookingId])
+}
+
+model CommunicationTemplate {
+  id        String               @id @default(uuid())
+  tenantId  String
+  tenant    Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name      String
+  channel   CommunicationChannel @default(email)
+  category  String               @default("general")
+  subject   String?
+  body      String               @db.Text
+  isDefault Boolean              @default(false)
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, category])
 }
