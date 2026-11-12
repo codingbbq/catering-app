@@ -14,6 +14,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { EnquiryActivityTimeline } from "@/features/enquiries/enquiry-activity-timeline";
 import { EnquiryForm } from "@/features/enquiries/enquiry-form";
 import { EnquiryStatusBadge } from "@/features/enquiries/enquiry-status-badge";
+import { useTenantCurrency } from "@/features/tenancy/tenant-provider";
 import {
   addEnquiryActivity,
   getEnquiry,
@@ -33,6 +34,7 @@ export default function EnquiryDetailPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { accessToken, isAuthenticated, isTenant } = useAuth();
+  const { formatCurrency } = useTenantCurrency();
 
   const [isEditing, setIsEditing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -154,6 +156,16 @@ export default function EnquiryDetailPage() {
               >
                 {qualifyMutation.isPending ? "Qualifying..." : "✓ Qualify Enquiry"}
               </button>
+            )}
+
+            {/* Create Quotation */}
+            {enquiry.status !== "lost" && enquiry.status !== "cancelled" && (
+              <Link
+                href={`/tenant/${tenantSlug}/quotations/new?enquiryId=${enquiry.id}`}
+                className="rounded bg-[#171717] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#262626] transition-colors"
+              >
+                + Create Quotation
+              </Link>
             )}
 
             {/* Quick action: Mark as Lost */}
@@ -299,10 +311,7 @@ export default function EnquiryDetailPage() {
                       <div className="text-[11px] font-medium text-[#737373]">Estimated Budget</div>
                       <div className="mt-1 font-mono text-xs font-semibold text-[#171717]">
                         {enquiry.estimatedBudget !== null
-                          ? enquiry.estimatedBudget.toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })
+                          ? formatCurrency(enquiry.estimatedBudget)
                           : "Not specified"}
                       </div>
                     </div>

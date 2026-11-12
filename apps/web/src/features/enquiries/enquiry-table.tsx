@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { EnquiryStatusBadge } from "./enquiry-status-badge";
+import { useTenantCurrency } from "@/features/tenancy/tenant-provider";
 
 const columnHelper = createColumnHelper<EnquiryItem>();
 
@@ -28,6 +29,7 @@ const SERVICE_LABELS: Record<string, string> = {
 };
 
 export function EnquiryTable({ data, tenantSlug }: EnquiryTableProps) {
+  const { formatCurrency } = useTenantCurrency();
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const columns = useMemo(
@@ -110,7 +112,7 @@ export function EnquiryTable({ data, tenantSlug }: EnquiryTableProps) {
           const val = info.getValue();
           return val !== null && val !== undefined ? (
             <span className="font-mono text-xs text-[#262626]">
-              {val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {formatCurrency(val)}
             </span>
           ) : (
             <span className="text-xs text-[#A3A3A3] italic">—</span>
@@ -154,7 +156,7 @@ export function EnquiryTable({ data, tenantSlug }: EnquiryTableProps) {
         ),
       }),
     ],
-    [tenantSlug],
+    [tenantSlug, formatCurrency],
   );
 
   const table = useReactTable({

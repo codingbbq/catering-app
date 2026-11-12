@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { archiveMenu, duplicateMenu, reactivateMenu } from "@/lib/menus-api";
 import { useAuth } from "@/providers/auth-provider";
+import { useTenantCurrency } from "@/features/tenancy/tenant-provider";
 
 interface MenuDetailsViewProps {
   menu: Menu;
@@ -20,6 +21,7 @@ export function MenuDetailsView({ menu, tenantSlug }: MenuDetailsViewProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { accessToken } = useAuth();
+  const { formatCurrency } = useTenantCurrency();
 
   // Group items by section
   const sections = useMemo(() => {
@@ -141,6 +143,16 @@ export function MenuDetailsView({ menu, tenantSlug }: MenuDetailsViewProps) {
             </svg>
             Edit Menu
           </Link>
+          <Link
+            href={`/tenant/${tenantSlug}/costing`}
+            className="btn btn-sm border border-[#E5E5E5] bg-white text-[#171717] hover:bg-[#FAFAFA] gap-1.5"
+            title="Open Costing Workspace"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            Costing
+          </Link>
           <button
             type="button"
             onClick={handleDuplicate}
@@ -172,7 +184,7 @@ export function MenuDetailsView({ menu, tenantSlug }: MenuDetailsViewProps) {
             Indicative Price
           </div>
           <div className="mt-1 font-mono text-xl font-bold text-[#171717]">
-            ${Number(menu.totalSellingPrice || 0).toFixed(2)}
+            {formatCurrency(menu.totalSellingPrice || 0)}
           </div>
           <div className="text-[10px] text-[#A3A3A3] mt-0.5">
             Per person / base sum
@@ -188,7 +200,7 @@ export function MenuDetailsView({ menu, tenantSlug }: MenuDetailsViewProps) {
           </div>
           <div className="text-[10px] text-[#A3A3A3] mt-0.5">
             {menu.totalCostPrice !== null && menu.totalCostPrice !== undefined
-              ? `Est. Cost: $${Number(menu.totalCostPrice).toFixed(2)}`
+              ? `Est. Cost: ${formatCurrency(menu.totalCostPrice)}`
               : "No cost data"}
           </div>
         </Card>
@@ -305,7 +317,7 @@ export function MenuDetailsView({ menu, tenantSlug }: MenuDetailsViewProps) {
 
                       <div className="text-right shrink-0">
                         <div className="font-mono text-xs font-semibold text-[#171717]">
-                          ${Number(item.unitPrice).toFixed(2)}
+                          {formatCurrency(item.unitPrice)}
                         </div>
                         {item.quantity && item.quantity !== 1 && (
                           <div className="font-mono text-[10px] text-[#737373]">

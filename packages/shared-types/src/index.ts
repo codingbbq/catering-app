@@ -776,4 +776,653 @@ export type MenuSearchParams = z.infer<typeof menuSearchParamsSchema>;
 export type MenuListStats = z.infer<typeof menuListStatsSchema>;
 export type MenuListResponse = z.infer<typeof menuListResponseSchema>;
 
+// --- CST-001: Costing Engine & Recipes ---
+
+export const recipeItemSchema = z.object({
+  id: z.string().uuid().optional(),
+  recipeId: z.string().uuid().optional(),
+  catalogueItemId: z.string().uuid().nullable().optional(),
+  name: z.string().min(1).max(200),
+  quantity: z.number().positive(),
+  unit: z.string().min(1).max(30).default("kg"),
+  unitCost: z.number().nonnegative().default(0),
+  totalCost: z.number().nonnegative().default(0),
+  notes: z.string().nullable().optional(),
+  sortOrder: z.number().int().nonnegative().default(0),
+});
+
+export const recipeItemInputSchema = z.object({
+  id: z.string().uuid().optional(),
+  catalogueItemId: z.string().uuid().nullable().optional(),
+  name: z.string().min(1).max(200),
+  quantity: z.number().positive(),
+  unit: z.string().min(1).max(30).default("kg"),
+  unitCost: z.number().nonnegative().default(0),
+  notes: z.string().nullable().optional(),
+  sortOrder: z.number().int().nonnegative().optional().default(0),
+});
+
+export const recipeSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(200),
+  description: z.string().nullable().optional(),
+  category: z.string().nullable().optional().default("general"),
+  yield: z.number().positive().default(1),
+  yieldUnit: z.string().min(1).max(50).default("portion"),
+  prepTimeMinutes: z.number().int().nonnegative().nullable().optional(),
+  cookTimeMinutes: z.number().int().nonnegative().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  targetMargin: z.number().min(0).max(99.99).nullable().optional(),
+  isArchived: z.boolean().default(false),
+  items: z.array(recipeItemSchema).default([]),
+  totalCost: z.number().nonnegative().default(0),
+  costPerYieldUnit: z.number().nonnegative().default(0),
+  suggestedSellingPrice: z.number().nonnegative().nullable().optional(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export const createRecipeRequestSchema = z.object({
+  name: z.string().min(1).max(200),
+  description: z.string().max(2000).optional(),
+  category: z.string().max(60).optional().default("general"),
+  yield: z.number().positive().default(1),
+  yieldUnit: z.string().min(1).max(50).default("portion"),
+  prepTimeMinutes: z.number().int().nonnegative().optional(),
+  cookTimeMinutes: z.number().int().nonnegative().optional(),
+  notes: z.string().max(2000).optional(),
+  targetMargin: z.number().min(0).max(99.99).optional().default(30),
+  items: z.array(recipeItemInputSchema).default([]),
+});
+
+export const updateRecipeRequestSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  description: z.string().max(2000).nullable().optional(),
+  category: z.string().max(60).nullable().optional(),
+  yield: z.number().positive().optional(),
+  yieldUnit: z.string().min(1).max(50).optional(),
+  prepTimeMinutes: z.number().int().nonnegative().nullable().optional(),
+  cookTimeMinutes: z.number().int().nonnegative().nullable().optional(),
+  notes: z.string().max(2000).nullable().optional(),
+  targetMargin: z.number().min(0).max(99.99).nullable().optional(),
+  isArchived: z.boolean().optional(),
+  items: z.array(recipeItemInputSchema).optional(),
+});
+
+export const recipeSearchParamsSchema = z.object({
+  search: z.string().optional(),
+  category: z.string().optional(),
+  isArchived: z.enum(["true", "false", "all"]).optional(),
+});
+
+export const recipeListStatsSchema = z.object({
+  totalRecipes: z.number().int().nonnegative(),
+  activeRecipes: z.number().int().nonnegative(),
+  archivedRecipes: z.number().int().nonnegative(),
+  avgCostPerPortion: z.number().nonnegative(),
+});
+
+export const recipeListResponseSchema = z.object({
+  data: z.array(recipeSchema),
+  total: z.number().int().nonnegative(),
+  stats: recipeListStatsSchema.optional(),
+});
+
+export const costSheetItemTypeSchema = z.enum(["ingredient", "recipe", "labor", "overhead", "other"]);
+export const costSheetStatusSchema = z.enum(["draft", "active", "archived"]);
+
+export const costSheetItemSchema = z.object({
+  id: z.string().uuid().optional(),
+  costSheetId: z.string().uuid().optional(),
+  itemType: costSheetItemTypeSchema.default("ingredient"),
+  name: z.string().min(1).max(200),
+  quantity: z.number().positive(),
+  unit: z.string().min(1).max(30).default("unit"),
+  unitCost: z.number().nonnegative().default(0),
+  totalCost: z.number().nonnegative().default(0),
+  sortOrder: z.number().int().nonnegative().default(0),
+  notes: z.string().nullable().optional(),
+});
+
+export const costSheetItemInputSchema = z.object({
+  id: z.string().uuid().optional(),
+  itemType: costSheetItemTypeSchema.default("ingredient"),
+  name: z.string().min(1).max(200),
+  quantity: z.number().positive(),
+  unit: z.string().min(1).max(30).default("unit"),
+  unitCost: z.number().nonnegative().default(0),
+  sortOrder: z.number().int().nonnegative().optional().default(0),
+  notes: z.string().nullable().optional(),
+});
+
+export const costSheetCalculationInputSchema = z.object({
+  servings: z.number().positive().default(1),
+  items: z.array(costSheetItemInputSchema).default([]),
+  laborCost: z.number().nonnegative().optional().default(0),
+  overheadCost: z.number().nonnegative().optional().default(0),
+  otherCost: z.number().nonnegative().optional().default(0),
+  targetMarginPercent: z.number().min(0).max(99.99).optional().default(30),
+  quotedPrice: z.number().nonnegative().optional(),
+});
+
+export const costSheetCalculationResultSchema = z.object({
+  servings: z.number().positive(),
+  ingredientCost: z.number().nonnegative(),
+  laborCost: z.number().nonnegative(),
+  overheadCost: z.number().nonnegative(),
+  otherCost: z.number().nonnegative(),
+  totalCost: z.number().nonnegative(),
+  costPerServing: z.number().nonnegative(),
+  targetMarginPercent: z.number().nonnegative(),
+  markupPercent: z.number().nonnegative(),
+  suggestedPrice: z.number().nonnegative(),
+  suggestedPricePerServing: z.number().nonnegative(),
+  quotedPrice: z.number().nonnegative(),
+  quotedPricePerServing: z.number().nonnegative(),
+  actualMarginPercent: z.number(),
+  actualMarkupPercent: z.number(),
+  grossProfit: z.number(),
+});
+
+export const costSheetSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(200),
+  description: z.string().nullable().optional(),
+  status: costSheetStatusSchema,
+  menuId: z.string().uuid().nullable().optional(),
+  menuName: z.string().nullable().optional(),
+  recipeId: z.string().uuid().nullable().optional(),
+  recipeName: z.string().nullable().optional(),
+  servings: z.number().positive(),
+  ingredientCost: z.number().nonnegative(),
+  laborCost: z.number().nonnegative(),
+  overheadCost: z.number().nonnegative(),
+  otherCost: z.number().nonnegative(),
+  totalCost: z.number().nonnegative(),
+  costPerServing: z.number().nonnegative(),
+  targetMarginPercent: z.number().nonnegative(),
+  markupPercent: z.number().nonnegative(),
+  suggestedPrice: z.number().nonnegative(),
+  quotedPrice: z.number().nonnegative(),
+  actualMarginPercent: z.number(),
+  notes: z.string().nullable().optional(),
+  items: z.array(costSheetItemSchema).default([]),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export const createCostSheetRequestSchema = z.object({
+  name: z.string().min(1).max(200),
+  description: z.string().max(2000).optional(),
+  status: costSheetStatusSchema.default("draft"),
+  menuId: z.string().uuid().nullable().optional(),
+  recipeId: z.string().uuid().nullable().optional(),
+  servings: z.number().positive().default(1),
+  targetMarginPercent: z.number().min(0).max(99.99).optional().default(30),
+  quotedPrice: z.number().nonnegative().optional(),
+  laborCost: z.number().nonnegative().optional().default(0),
+  overheadCost: z.number().nonnegative().optional().default(0),
+  otherCost: z.number().nonnegative().optional().default(0),
+  notes: z.string().max(2000).optional(),
+  items: z.array(costSheetItemInputSchema).default([]),
+});
+
+export const updateCostSheetRequestSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  description: z.string().max(2000).nullable().optional(),
+  status: costSheetStatusSchema.optional(),
+  menuId: z.string().uuid().nullable().optional(),
+  recipeId: z.string().uuid().nullable().optional(),
+  servings: z.number().positive().optional(),
+  targetMarginPercent: z.number().min(0).max(99.99).optional(),
+  quotedPrice: z.number().nonnegative().optional(),
+  laborCost: z.number().nonnegative().optional(),
+  overheadCost: z.number().nonnegative().optional(),
+  otherCost: z.number().nonnegative().optional(),
+  notes: z.string().max(2000).nullable().optional(),
+  items: z.array(costSheetItemInputSchema).optional(),
+});
+
+export const costSheetSearchParamsSchema = z.object({
+  search: z.string().optional(),
+  status: z.enum(["active", "draft", "archived", "all"]).optional(),
+  menuId: z.string().uuid().optional(),
+  recipeId: z.string().uuid().optional(),
+});
+
+export const costSheetListStatsSchema = z.object({
+  totalCostSheets: z.number().int().nonnegative(),
+  activeCount: z.number().int().nonnegative(),
+  draftCount: z.number().int().nonnegative(),
+  archivedCount: z.number().int().nonnegative(),
+  avgMarginPercent: z.number(),
+  avgCostPerServing: z.number().nonnegative(),
+});
+
+export const costSheetListResponseSchema = z.object({
+  data: z.array(costSheetSchema),
+  total: z.number().int().nonnegative(),
+  stats: costSheetListStatsSchema.optional(),
+});
+
+export type RecipeItem = z.infer<typeof recipeItemSchema>;
+export type RecipeItemInput = z.input<typeof recipeItemInputSchema>;
+export type Recipe = z.infer<typeof recipeSchema>;
+export type CreateRecipeRequest = z.input<typeof createRecipeRequestSchema>;
+export type UpdateRecipeRequest = z.input<typeof updateRecipeRequestSchema>;
+export type RecipeSearchParams = z.infer<typeof recipeSearchParamsSchema>;
+export type RecipeListStats = z.infer<typeof recipeListStatsSchema>;
+export type RecipeListResponse = z.infer<typeof recipeListResponseSchema>;
+
+export type CostSheetItemType = z.infer<typeof costSheetItemTypeSchema>;
+export type CostSheetStatus = z.infer<typeof costSheetStatusSchema>;
+export type CostSheetItem = z.infer<typeof costSheetItemSchema>;
+export type CostSheetItemInput = z.input<typeof costSheetItemInputSchema>;
+export type CostSheetCalculationInput = z.input<typeof costSheetCalculationInputSchema>;
+export type CostSheetCalculationResult = z.infer<typeof costSheetCalculationResultSchema>;
+export type CostSheet = z.infer<typeof costSheetSchema>;
+export type CreateCostSheetRequest = z.input<typeof createCostSheetRequestSchema>;
+export type UpdateCostSheetRequest = z.input<typeof updateCostSheetRequestSchema>;
+export type CostSheetSearchParams = z.infer<typeof costSheetSearchParamsSchema>;
+export type CostSheetListStats = z.infer<typeof costSheetListStatsSchema>;
+export type CostSheetListResponse = z.infer<typeof costSheetListResponseSchema>;
+
+// --- Deterministic Costing Calculation Engine ---
+
+const round2 = (val: number): number => {
+  return Math.round((val + Number.EPSILON) * 100) / 100;
+};
+
+export function calculateRecipeMetrics(
+  items: Array<{ quantity: number; unitCost: number }>,
+  yieldCount: number = 1,
+  targetMarginPercent: number = 30
+) {
+  const safeYield = yieldCount > 0 ? yieldCount : 1;
+  const safeMargin = Math.min(Math.max(targetMarginPercent, 0), 99.99);
+
+  const totalCost = round2(
+    items.reduce((sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unitCost) || 0), 0)
+  );
+  const costPerYieldUnit = round2(totalCost / safeYield);
+
+  // Suggested selling price based on target gross margin: Total Cost / (1 - Margin/100)
+  const marginFactor = 1 - safeMargin / 100;
+  const suggestedSellingPrice = marginFactor > 0 ? round2(totalCost / marginFactor) : totalCost;
+  const suggestedPricePerYieldUnit = round2(suggestedSellingPrice / safeYield);
+
+  // Markup percentage: (Selling Price - Total Cost) / Total Cost * 100
+  const markupPercent = totalCost > 0 ? round2(((suggestedSellingPrice - totalCost) / totalCost) * 100) : 0;
+
+  return {
+    totalCost,
+    costPerYieldUnit,
+    suggestedSellingPrice,
+    suggestedPricePerYieldUnit,
+    markupPercent,
+    targetMarginPercent: safeMargin,
+  };
+}
+
+export function calculateCostSheetEngine(input: {
+  servings?: number | undefined;
+  items?:
+    | Array<{
+        itemType?: CostSheetItemType | undefined;
+        name?: string | undefined;
+        quantity: number;
+        unitCost?: number | undefined;
+        unit?: string | undefined;
+        totalCost?: number | undefined;
+      }>
+    | undefined;
+  laborCost?: number | undefined;
+  overheadCost?: number | undefined;
+  otherCost?: number | undefined;
+  targetMarginPercent?: number | undefined;
+  quotedPrice?: number | undefined;
+}): CostSheetCalculationResult {
+  const servings = Number(input.servings) > 0 ? Number(input.servings) : 1;
+  const targetMargin = Math.min(Math.max(Number(input.targetMarginPercent ?? 30), 0), 99.99);
+
+  let rawIngredientCost = 0;
+  let itemLaborCost = 0;
+  let itemOverheadCost = 0;
+  let itemOtherCost = 0;
+
+  if (input.items && Array.isArray(input.items)) {
+    for (const item of input.items) {
+      const lineCost = (Number(item.quantity) || 0) * (Number(item.unitCost) || 0);
+      switch (item.itemType) {
+        case "labor":
+          itemLaborCost += lineCost;
+          break;
+        case "overhead":
+          itemOverheadCost += lineCost;
+          break;
+        case "other":
+          itemOtherCost += lineCost;
+          break;
+        case "ingredient":
+        case "recipe":
+        default:
+          rawIngredientCost += lineCost;
+          break;
+      }
+    }
+  }
+
+  const ingredientCost = round2(rawIngredientCost);
+  const laborCost = round2(itemLaborCost + (Number(input.laborCost) || 0));
+  const overheadCost = round2(itemOverheadCost + (Number(input.overheadCost) || 0));
+  const otherCost = round2(itemOtherCost + (Number(input.otherCost) || 0));
+
+  const totalCost = round2(ingredientCost + laborCost + overheadCost + otherCost);
+  const costPerServing = round2(totalCost / servings);
+
+  // Suggested price based on target gross margin
+  const marginDivisor = 1 - targetMargin / 100;
+  const suggestedPrice = marginDivisor > 0 ? round2(totalCost / marginDivisor) : totalCost;
+  const suggestedPricePerServing = round2(suggestedPrice / servings);
+
+  // Target markup
+  const markupPercent = totalCost > 0 ? round2(((suggestedPrice - totalCost) / totalCost) * 100) : 0;
+
+  // Quoted price
+  const quotedPrice = input.quotedPrice !== undefined && input.quotedPrice !== null && !isNaN(Number(input.quotedPrice))
+    ? round2(Number(input.quotedPrice))
+    : suggestedPrice;
+  const quotedPricePerServing = round2(quotedPrice / servings);
+
+  // Actual realized margins based on quoted price
+  const grossProfit = round2(quotedPrice - totalCost);
+  const actualMarginPercent = quotedPrice > 0 ? round2((grossProfit / quotedPrice) * 100) : 0;
+  const actualMarkupPercent = totalCost > 0 ? round2((grossProfit / totalCost) * 100) : 0;
+
+  return {
+    servings,
+    ingredientCost,
+    laborCost,
+    overheadCost,
+    otherCost,
+    totalCost,
+    costPerServing,
+    targetMarginPercent: targetMargin,
+    markupPercent,
+    suggestedPrice,
+    suggestedPricePerServing,
+    quotedPrice,
+    quotedPricePerServing,
+    actualMarginPercent,
+    actualMarkupPercent,
+    grossProfit,
+  };
+}
+
+// ============================================================================
+// QTN-001: Quotations and Revisions Contracts & Calculations
+// ============================================================================
+
+export const quotationStatusSchema = z.enum([
+  "draft",
+  "sent",
+  "accepted",
+  "rejected",
+  "expired",
+  "superseded",
+]);
+export type QuotationStatus = z.infer<typeof quotationStatusSchema>;
+
+export const revisionStatusSchema = z.enum([
+  "draft",
+  "sent",
+  "accepted",
+  "rejected",
+  "superseded",
+]);
+export type RevisionStatus = z.infer<typeof revisionStatusSchema>;
+
+export const quotationLineItemSchema = z.object({
+  id: z.string().uuid(),
+  revisionId: z.string().uuid(),
+  name: z.string().min(1).max(200),
+  description: z.string().nullable().optional(),
+  category: z.string().default("Food & Beverage"),
+  quantity: z.number().positive(),
+  unit: z.string().default("guest"),
+  unitPrice: z.number().nonnegative(),
+  totalPrice: z.number().nonnegative(),
+  unitCost: z.number().nonnegative().nullable().optional(),
+  totalCost: z.number().nonnegative().nullable().optional(),
+  sortOrder: z.number().int().nonnegative().default(0),
+});
+export type QuotationLineItem = z.infer<typeof quotationLineItemSchema>;
+
+export const quotationLineItemInputSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().min(1, "Item name is required").max(200),
+  description: z.string().nullable().optional(),
+  category: z.string().default("Food & Beverage"),
+  quantity: z.number().positive("Quantity must be greater than 0"),
+  unit: z.string().default("guest"),
+  unitPrice: z.number().nonnegative("Unit price must be positive or 0"),
+  unitCost: z.number().nonnegative().nullable().optional(),
+  sortOrder: z.number().int().nonnegative().optional().default(0),
+});
+export type QuotationLineItemInput = z.input<typeof quotationLineItemInputSchema>;
+
+export const quotationRevisionSchema = z.object({
+  id: z.string().uuid(),
+  quotationId: z.string().uuid(),
+  revisionNumber: z.number().int().positive(),
+  status: revisionStatusSchema,
+  menuId: z.string().uuid().nullable().optional(),
+  menuName: z.string().nullable().optional(),
+  costSheetId: z.string().uuid().nullable().optional(),
+  costSheetName: z.string().nullable().optional(),
+  guestCount: z.number().int().positive().nullable().optional(),
+  pricePerPerson: z.number().nonnegative().nullable().optional(),
+  subtotal: z.number().nonnegative(),
+  taxPercent: z.number().min(0).max(100).default(0),
+  taxAmount: z.number().nonnegative().default(0),
+  discountAmount: z.number().nonnegative().default(0),
+  totalAmount: z.number().nonnegative(),
+  estimatedCost: z.number().nonnegative().nullable().optional(),
+  estimatedMarginPercent: z.number().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  changeSummary: z.string().nullable().optional(),
+  createdByUserId: z.string().nullable().optional(),
+  items: z.array(quotationLineItemSchema).default([]),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type QuotationRevision = z.infer<typeof quotationRevisionSchema>;
+
+export const quotationSchema = z.object({
+  id: z.string().uuid(),
+  tenantId: z.string().uuid(),
+  enquiryId: z.string().uuid(),
+  enquiryTitle: z.string().optional(),
+  customerId: z.string().uuid().optional(),
+  customerName: z.string().optional(),
+  customerEmail: z.string().nullable().optional(),
+  customerPhone: z.string().nullable().optional(),
+  quotationNumber: z.string(),
+  title: z.string().min(1),
+  status: quotationStatusSchema,
+  currentRevisionNumber: z.number().int().positive(),
+  validUntil: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  terms: z.string().nullable().optional(),
+  currentRevision: quotationRevisionSchema.nullable().optional(),
+  revisions: z.array(quotationRevisionSchema).optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type Quotation = z.infer<typeof quotationSchema>;
+
+export const createQuotationRequestSchema = z.object({
+  enquiryId: z.string().uuid("A valid enquiry must be selected"),
+  title: z.string().min(1, "Quotation title is required").max(200),
+  validUntil: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  terms: z.string().nullable().optional(),
+  menuId: z.string().uuid().nullable().optional(),
+  costSheetId: z.string().uuid().nullable().optional(),
+  guestCount: z.number().int().positive().nullable().optional(),
+  pricePerPerson: z.number().nonnegative().nullable().optional(),
+  taxPercent: z.number().min(0).max(100).optional().default(0),
+  discountAmount: z.number().nonnegative().optional().default(0),
+  changeSummary: z.string().nullable().optional(),
+  items: z.array(quotationLineItemInputSchema).min(1, "At least one line item is required"),
+});
+export type CreateQuotationRequest = z.input<typeof createQuotationRequestSchema>;
+
+export const updateQuotationRequestSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  validUntil: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  terms: z.string().nullable().optional(),
+});
+export type UpdateQuotationRequest = z.input<typeof updateQuotationRequestSchema>;
+
+export const createQuotationRevisionRequestSchema = z.object({
+  changeSummary: z.string().min(1, "A summary of revisions is required for history tracking").max(500),
+  menuId: z.string().uuid().nullable().optional(),
+  costSheetId: z.string().uuid().nullable().optional(),
+  guestCount: z.number().int().positive().nullable().optional(),
+  pricePerPerson: z.number().nonnegative().nullable().optional(),
+  taxPercent: z.number().min(0).max(100).optional().default(0),
+  discountAmount: z.number().nonnegative().optional().default(0),
+  notes: z.string().nullable().optional(),
+  items: z.array(quotationLineItemInputSchema).min(1, "At least one line item is required"),
+});
+export type CreateQuotationRevisionRequest = z.input<typeof createQuotationRevisionRequestSchema>;
+
+export const updateDraftRevisionRequestSchema = z.object({
+  menuId: z.string().uuid().nullable().optional(),
+  costSheetId: z.string().uuid().nullable().optional(),
+  guestCount: z.number().int().positive().nullable().optional(),
+  pricePerPerson: z.number().nonnegative().nullable().optional(),
+  taxPercent: z.number().min(0).max(100).optional().default(0),
+  discountAmount: z.number().nonnegative().optional().default(0),
+  notes: z.string().nullable().optional(),
+  changeSummary: z.string().nullable().optional(),
+  items: z.array(quotationLineItemInputSchema).min(1, "At least one line item is required"),
+});
+export type UpdateDraftRevisionRequest = z.input<typeof updateDraftRevisionRequestSchema>;
+
+export const sendQuotationRequestSchema = z.object({
+  revisionId: z.string().uuid().optional(),
+  sendNotes: z.string().nullable().optional(),
+  recipientEmail: z.string().email().nullable().optional(),
+});
+export type SendQuotationRequest = z.input<typeof sendQuotationRequestSchema>;
+
+export const quotationSearchParamsSchema = z.object({
+  search: z.string().optional(),
+  status: z
+    .enum(["draft", "sent", "accepted", "rejected", "expired", "superseded", "all"])
+    .optional(),
+  enquiryId: z.string().uuid().optional(),
+  customerId: z.string().uuid().optional(),
+});
+export type QuotationSearchParams = z.infer<typeof quotationSearchParamsSchema>;
+
+export const quotationListItemSchema = z.object({
+  id: z.string().uuid(),
+  quotationNumber: z.string(),
+  title: z.string(),
+  status: quotationStatusSchema,
+  enquiryId: z.string().uuid(),
+  enquiryTitle: z.string(),
+  customerId: z.string().uuid(),
+  customerName: z.string(),
+  currentRevisionNumber: z.number().int().positive(),
+  totalRevisions: z.number().int().positive(),
+  totalAmount: z.number().nonnegative(),
+  guestCount: z.number().int().positive().nullable().optional(),
+  validUntil: z.string().nullable().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type QuotationListItem = z.infer<typeof quotationListItemSchema>;
+
+export const quotationListStatsSchema = z.object({
+  totalQuotations: z.number().int().nonnegative(),
+  totalValue: z.number().nonnegative(),
+  acceptedCount: z.number().int().nonnegative(),
+  acceptedValue: z.number().nonnegative(),
+  pendingCount: z.number().int().nonnegative(),
+  pendingValue: z.number().nonnegative(),
+});
+export type QuotationListStats = z.infer<typeof quotationListStatsSchema>;
+
+export const quotationListResponseSchema = z.object({
+  items: z.array(quotationListItemSchema),
+  stats: quotationListStatsSchema,
+  total: z.number().int().nonnegative(),
+});
+export type QuotationListResponse = z.infer<typeof quotationListResponseSchema>;
+
+// Deterministic Quotation Calculation Engine
+export function calculateQuotationTotals(input: {
+  items: Array<{
+    quantity: number;
+    unitPrice: number;
+    unitCost?: number | null | undefined;
+  }>;
+  discountAmount?: number | undefined;
+  taxPercent?: number | undefined;
+  guestCount?: number | null | undefined;
+  pricePerPerson?: number | null | undefined;
+}) {
+  const discount = Math.max(0, Number(input.discountAmount ?? 0));
+  const taxPct = Math.min(Math.max(0, Number(input.taxPercent ?? 0)), 100);
+
+  let rawSubtotal = 0;
+  let rawTotalCost = 0;
+  let hasCosts = false;
+
+  for (const item of input.items) {
+    const qty = Number(item.quantity) || 0;
+    const price = Number(item.unitPrice) || 0;
+    const itemTotal = round2(qty * price);
+    rawSubtotal += itemTotal;
+
+    if (item.unitCost != null && Number(item.unitCost) >= 0) {
+      hasCosts = true;
+      rawTotalCost += round2(qty * Number(item.unitCost));
+    }
+  }
+
+  const subtotal = round2(rawSubtotal);
+  const discountedSubtotal = Math.max(0, round2(subtotal - discount));
+  const taxAmount = round2((discountedSubtotal * taxPct) / 100);
+  const totalAmount = round2(discountedSubtotal + taxAmount);
+
+  const estimatedCost = hasCosts ? round2(rawTotalCost) : null;
+  let estimatedMarginPercent: number | null = null;
+
+  if (estimatedCost != null && discountedSubtotal > 0) {
+    const grossProfit = discountedSubtotal - estimatedCost;
+    estimatedMarginPercent = round2((grossProfit / discountedSubtotal) * 100);
+  }
+
+  const guestCount = input.guestCount && Number(input.guestCount) > 0 ? Number(input.guestCount) : null;
+  const calculatedPricePerPerson =
+    guestCount && guestCount > 0 ? round2(totalAmount / guestCount) : (input.pricePerPerson ? round2(Number(input.pricePerPerson)) : null);
+
+  return {
+    subtotal,
+    discountAmount: discount,
+    taxPercent: taxPct,
+    taxAmount,
+    totalAmount,
+    estimatedCost,
+    estimatedMarginPercent,
+    pricePerPerson: calculatedPricePerPerson,
+  };
+}
+
 

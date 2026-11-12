@@ -5,6 +5,7 @@ import type {
   CatalogueImportResult,
 } from "@catering/shared-types";
 import { useState } from "react";
+import { useTenantCurrency } from "@/features/tenancy/tenant-provider";
 
 interface CatalogueCsvImporterProps {
   onImport: (data: CatalogueImportRequest) => Promise<CatalogueImportResult>;
@@ -36,6 +37,7 @@ export function CatalogueCsvImporter({
   onImport,
   onSuccess,
 }: CatalogueCsvImporterProps) {
+  const { formatCurrency } = useTenantCurrency();
   const [csvText, setCsvText] = useState("");
   const [fileName, setFileName] = useState<string | null>(null);
   const [previewRows, setPreviewRows] = useState<ParsedPreviewRow[]>([]);
@@ -449,10 +451,10 @@ export function CatalogueCsvImporter({
                       {row.pricingUnit}
                     </td>
                     <td className="px-3 py-2 font-mono text-[#737373]">
-                      {row.costPrice ? `$${row.costPrice}` : "—"}
+                      {row.costPrice ? formatCurrency(parseFloat(row.costPrice)) : "—"}
                     </td>
                     <td className="px-3 py-2 font-mono font-semibold text-[#171717]">
-                      {row.sellingPrice ? `$${row.sellingPrice}` : "—"}
+                      {row.sellingPrice ? formatCurrency(parseFloat(row.sellingPrice)) : "—"}
                     </td>
                     <td className="px-3 py-2 text-[#737373]">
                       {row.dietaryTags || "—"}

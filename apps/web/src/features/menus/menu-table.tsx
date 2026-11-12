@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { useTenantCurrency } from "@/features/tenancy/tenant-provider";
 
 const columnHelper = createColumnHelper<Menu>();
 
@@ -29,6 +30,7 @@ export function MenuTable({
   onDuplicate,
   onArchiveToggle,
 }: MenuTableProps) {
+  const { formatCurrency } = useTenantCurrency();
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const columns = useMemo(
@@ -103,7 +105,7 @@ export function MenuTable({
           const price = info.getValue() ?? 0;
           return (
             <span className="font-mono text-xs font-semibold text-[#171717]">
-              ${Number(price).toFixed(2)}
+              {formatCurrency(price)}
             </span>
           );
         },
@@ -185,7 +187,7 @@ export function MenuTable({
         },
       }),
     ],
-    [tenantSlug, onDuplicate, onArchiveToggle],
+    [tenantSlug, onDuplicate, onArchiveToggle, formatCurrency],
   );
 
   const table = useReactTable({

@@ -9,9 +9,9 @@
 | CRM-001 | Customer Management | High | FND-001, IAM-001, TEN-001 | COMPLETED | [CRM-001](./05-CRM-001-customer-management.md) |
 | CRM-002 | Enquiry Management | High | CRM-001 | COMPLETED | [CRM-002](./06-CRM-002-enquiry-management.md) |
 | CAT-001 | Food Catalogue and Catalogue Import | High | TEN-001 | COMPLETED | [CAT-001](./07-CAT-001-food-catalogue-and-import.md) |
-| MEN-001 | Menu Builder | High | CAT-001 | NOT_STARTED | [MEN-001](./08-MEN-001-menu-builder.md) |
-| CST-001 | Costing Engine | Critical | CAT-001, MEN-001 | NOT_STARTED | [CST-001](./09-CST-001-costing-engine.md) |
-| QTN-001 | Quotations and Revisions | Critical | CRM-002, MEN-001, CST-001 | NOT_STARTED | [QTN-001](./10-QTN-001-quotations-and-revisions.md) |
+| MEN-001 | Menu Builder | High | CAT-001 | COMPLETED | [MEN-001](./08-MEN-001-menu-builder.md) |
+| CST-001 | Costing Engine | Critical | CAT-001, MEN-001 | COMPLETED | [CST-001](./09-CST-001-costing-engine.md) |
+| QTN-001 | Quotations and Revisions | Critical | CRM-002, MEN-001, CST-001 | COMPLETED | [QTN-001](./10-QTN-001-quotations-and-revisions.md) |
 | BKG-001 | Booking Management | Critical | QTN-001 | NOT_STARTED | [BKG-001](./11-BKG-001-booking-management.md) |
 | COM-001 | Communication Hub | High | CRM-002, QTN-001, BKG-001 | NOT_STARTED | [COM-001](./12-COM-001-communication-hub.md) |
 | FIN-001 | Invoicing | Medium | BKG-001, DMO-001 | NOT_STARTED | [FIN-001](./13-FIN-001-invoicing.md) |

@@ -23,6 +23,7 @@
     "typecheck": "tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:validate": "prisma validate",
+    "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts"
   },
   "prisma": {

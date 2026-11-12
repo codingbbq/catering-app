@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { listCatalogueItems } from "@/lib/catalogue-api";
 import { createMenu, updateMenu } from "@/lib/menus-api";
 import { useAuth } from "@/providers/auth-provider";
+import { useTenantCurrency } from "@/features/tenancy/tenant-provider";
 
 const SERVICE_STYLES = [
   { id: "buffet", label: "Buffet" },
@@ -45,6 +46,7 @@ export function MenuBuilderForm({
 }: MenuBuilderFormProps) {
   const router = useRouter();
   const { accessToken } = useAuth();
+  const { currencySymbol, formatCurrency } = useTenantCurrency();
 
   // Core metadata form state
   const [name, setName] = useState(initialMenu?.name || "");
@@ -593,7 +595,7 @@ export function MenuBuilderForm({
                               </div>
 
                               <div className="flex items-center gap-1">
-                                <span className="text-[11px] text-[#737373]">$</span>
+                                <span className="text-[11px] text-[#737373]">{currencySymbol}</span>
                                 <input
                                   type="number"
                                   min="0"
@@ -680,7 +682,7 @@ export function MenuBuilderForm({
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-[#737373]">Selling Price (Sum of Items)</span>
                   <span className="font-mono text-sm font-bold text-[#171717]">
-                    ${totalSellingPrice.toFixed(2)}
+                    {formatCurrency(totalSellingPrice)}
                   </span>
                 </div>
 
@@ -688,7 +690,7 @@ export function MenuBuilderForm({
                   <span className="text-[#737373]">Estimated Cost Price</span>
                   <span className="font-mono text-xs text-[#737373]">
                     {totalCostPrice !== null
-                      ? `$${totalCostPrice.toFixed(2)}`
+                      ? formatCurrency(totalCostPrice)
                       : "—"}
                   </span>
                 </div>
@@ -717,14 +719,14 @@ export function MenuBuilderForm({
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-[#737373]">Revenue:</span>
                     <span className="font-mono font-semibold text-[#171717]">
-                      ${(totalSellingPrice * parseInt(minGuests, 10)).toFixed(2)}
+                      {formatCurrency(totalSellingPrice * parseInt(minGuests, 10))}
                     </span>
                   </div>
                   {totalCostPrice !== null && (
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-[#737373]">Est. Cost:</span>
                       <span className="font-mono text-[#737373]">
-                        ${(totalCostPrice * parseInt(minGuests, 10)).toFixed(2)}
+                        {formatCurrency(totalCostPrice * parseInt(minGuests, 10))}
                       </span>
                     </div>
                   )}
@@ -874,7 +876,7 @@ export function MenuBuilderForm({
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="text-right">
                         <div className="font-mono text-xs font-bold text-[#171717]">
-                          ${Number(item.sellingPrice).toFixed(2)}
+                          {formatCurrency(item.sellingPrice)}
                         </div>
                         <div className="text-[10px] text-[#A3A3A3]">
                           {item.pricingUnit.replace(/_/g, " ")}

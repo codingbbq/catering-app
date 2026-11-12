@@ -3,10 +3,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { getTenantProfile, updateTenantProfile } from "@/lib/tenant-admin-api";
+import { COMMON_CURRENCY_OPTIONS, getCurrencySymbol } from "@/lib/currency";
 import { useAuth } from "@/providers/auth-provider";
 
 export default function TenantSettingsPage() {
@@ -26,16 +27,16 @@ export default function TenantSettingsPage() {
     queryKey: ["tenant", "profile"],
     queryFn: () => getTenantProfile(accessToken!),
     enabled: isAuthenticated && isTenant && !!accessToken,
-    select(data) {
-      if (!editMode && !displayName) {
-        setDisplayName(data.displayName);
-        setTimezone(data.settings?.timezone ?? "UTC");
-        setCurrencyCode(data.settings?.currencyCode ?? "USD");
-        setLocale(data.settings?.locale ?? "en");
-      }
-      return data;
-    },
   });
+
+  useEffect(() => {
+    if (profile && !editMode) {
+      setDisplayName(profile.displayName);
+      setTimezone(profile.settings?.timezone ?? "UTC");
+      setCurrencyCode(profile.settings?.currencyCode ?? "USD");
+      setLocale(profile.settings?.locale ?? "en");
+    }
+  }, [profile, editMode]);
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -106,7 +107,13 @@ export default function TenantSettingsPage() {
             <button
               type="button"
               className="rounded border border-[#E5E5E5] bg-white px-2.5 py-1 text-xs font-medium text-[#262626] hover:bg-[#F5F5F5] transition-colors"
-              onClick={() => setEditMode(true)}
+              onClick={() => {
+                setDisplayName(profile?.displayName ?? "");
+                setTimezone(profile?.settings?.timezone ?? "UTC");
+                setCurrencyCode(profile?.settings?.currencyCode ?? "USD");
+                setLocale(profile?.settings?.locale ?? "en");
+                setEditMode(true);
+              }}
             >
               Edit Settings
             </button>
@@ -153,14 +160,31 @@ export default function TenantSettingsPage() {
                   <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="edit-currency">
                     Billing Currency
                   </label>
-                  <input
-                    id="edit-currency"
-                    type="text"
-                    className="w-full rounded border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#262626] uppercase font-mono focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717]"
-                    value={currencyCode}
-                    onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())}
-                    maxLength={3}
-                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="edit-currency"
+                      type="text"
+                      list="currency-options"
+                      className="w-full rounded border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#262626] uppercase font-mono focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717]"
+                      value={currencyCode}
+                      onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())}
+                      maxLength={3}
+                      placeholder="e.g. INR, USD, EUR"
+                    />
+                    <span className="inline-flex items-center rounded border border-[#E5E5E5] bg-[#F5F5F4] px-2.5 py-2 font-mono text-xs font-semibold text-[#171717] min-w-8 justify-center">
+                      {getCurrencySymbol(currencyCode)}
+                    </span>
+                  </div>
+                  <datalist id="currency-options">
+                    {COMMON_CURRENCY_OPTIONS.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </datalist>
+                  <p className="text-[11px] text-[#737373]">
+                    Used across all costing, catalogue items, menus, and proposals.
+                  </p>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold uppercase tracking-wider text-[#737373]" htmlFor="edit-locale-code">
@@ -172,7 +196,11 @@ export default function TenantSettingsPage() {
                     className="w-full rounded border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#262626] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717]"
                     value={locale}
                     onChange={(e) => setLocale(e.target.value)}
+                    placeholder="e.g. en-IN, en-US, en-GB"
                   />
+                  <p className="text-[11px] text-[#737373]">
+                    Determines digit grouping and number localization formats.
+                  </p>
                 </div>
               </div>
 
@@ -212,7 +240,7 @@ export default function TenantSettingsPage() {
                   Operating Currency
                 </span>
                 <p className="font-mono text-[#262626] font-semibold">
-                  {profile?.settings?.currencyCode ?? "USD"}
+                  {profile?.settings?.currencyCode ?? "USD"} ({getCurrencySymbol(profile?.settings?.currencyCode ?? "USD")})
                 </p>
               </div>
               <div className="space-y-1">

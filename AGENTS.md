@@ -54,6 +54,7 @@ Before implementing any feature:
 8. Add or update relevant tests and type verifications.
 9. Verify that existing functionality is not broken.
 10. Update feature documentation and status.
+11. The currency of a tenant is the saved currency in the database for that tenant. For eg. if a tenant is using INR as currency, all the features should follow that. Also if user updates the currency in settings, that it should reflect across all the features.
 
 ## Definition of Done
 

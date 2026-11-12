@@ -15,6 +15,7 @@ import { useMemo, useState } from "react";
 import { formatImageUrl } from "./catalogue-image-gallery";
 import { DietaryTagBadge } from "./dietary-tag-badge";
 import { PricingUnitBadge } from "./pricing-unit-badge";
+import { useTenantCurrency } from "@/features/tenancy/tenant-provider";
 
 const columnHelper = createColumnHelper<CatalogueItem>();
 
@@ -29,6 +30,7 @@ export function CatalogueTable({
   tenantSlug,
   onArchiveToggle,
 }: CatalogueTableProps) {
+  const { formatCurrency } = useTenantCurrency();
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const columns = useMemo(
@@ -109,7 +111,7 @@ export function CatalogueTable({
           }
           return (
             <span className="font-mono text-xs text-[#525252]">
-              ${Number(val).toFixed(2)}
+              {formatCurrency(val)}
             </span>
           );
         },
@@ -118,7 +120,7 @@ export function CatalogueTable({
         header: "Selling Price",
         cell: (info) => (
           <span className="font-mono text-xs font-semibold text-[#171717]">
-            ${Number(info.getValue()).toFixed(2)}
+            {formatCurrency(info.getValue())}
           </span>
         ),
       }),
@@ -192,7 +194,7 @@ export function CatalogueTable({
         },
       }),
     ],
-    [tenantSlug, onArchiveToggle],
+    [tenantSlug, onArchiveToggle, formatCurrency],
   );
 
   const table = useReactTable({

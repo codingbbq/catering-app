@@ -8,10 +8,12 @@ import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { getTenantProfile } from "@/lib/tenant-admin-api";
 import { useAuth } from "@/providers/auth-provider";
+import { useTenantCurrency } from "@/features/tenancy/tenant-provider";
 
 export default function TenantDashboardPage() {
   const { tenantSlug } = useParams<{ tenantSlug: string }>();
   const { accessToken, isAuthenticated, isTenant } = useAuth();
+  const { currencyCode, currencySymbol } = useTenantCurrency();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["tenant", "profile"],
@@ -77,7 +79,7 @@ export default function TenantDashboardPage() {
         </div>
         <div className="rounded-lg border border-[#E5E5E5] bg-white p-4 space-y-1">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-[#737373]">Currency &amp; Timezone</p>
-          <p className="text-lg font-bold text-[#171717]">{profile?.settings?.currencyCode ?? "USD"}</p>
+          <p className="text-lg font-bold text-[#171717]">{currencyCode} ({currencySymbol})</p>
           <p className="text-[11px] text-[#737373]">{profile?.settings?.timezone ?? "UTC"}</p>
         </div>
         <div className="rounded-lg border border-[#E5E5E5] bg-white p-4 space-y-1">

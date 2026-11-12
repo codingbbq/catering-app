@@ -6,6 +6,8 @@ import { CustomersModule } from './customers/customers.module.js';
 import { EnquiriesModule } from './enquiries/enquiries.module.js';
 import { CatalogueModule } from './catalogue/catalogue.module.js';
 import { MenusModule } from './menus/menus.module.js';
+import { CostingModule } from './costing/costing.module.js';
+import { QuotationsModule } from './quotations/quotations.module.js';
 import { PlatformTenantsModule } from './platform-tenants/platform-tenants.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { TenancyModule } from './tenancy/tenancy.module.js';
@@ -22,6 +24,8 @@ import { TenantAdminModule } from './tenant-admin/tenant-admin.module.js';
     EnquiriesModule,
     CatalogueModule,
     MenusModule,
+    CostingModule,
+    QuotationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

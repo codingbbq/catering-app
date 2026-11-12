@@ -8,6 +8,7 @@ import type {
 } from "@catering/shared-types";
 import Link from "next/link";
 import { useState } from "react";
+import { useTenantCurrency } from "@/features/tenancy/tenant-provider";
 
 interface CatalogueItemFormProps {
   tenantSlug: string;
@@ -58,6 +59,7 @@ export function CatalogueItemForm({
   onSubmit,
   isSubmitting = false,
 }: CatalogueItemFormProps) {
+  const { currencySymbol, formatCurrency } = useTenantCurrency();
   const [name, setName] = useState(initialData?.name || "");
   const [description, setDescription] = useState(initialData?.description || "");
   const [category, setCategory] = useState(initialData?.category || "main");
@@ -240,7 +242,7 @@ export function CatalogueItemForm({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label className="block text-[11px] font-medium text-[#737373] mb-1">
-              Unit Cost Price ($)
+              Unit Cost Price ({currencySymbol})
             </label>
             <input
               type="number"
@@ -258,7 +260,7 @@ export function CatalogueItemForm({
 
           <div>
             <label className="block text-[11px] font-medium text-[#737373] mb-1">
-              Selling Price ($) <span className="text-[#EF4444]">*</span>
+              Selling Price ({currencySymbol}) <span className="text-[#EF4444]">*</span>
             </label>
             <input
               type="number"
@@ -319,7 +321,7 @@ export function CatalogueItemForm({
             <div className="text-[11px] text-[#737373]">
               Gross profit:{" "}
               <span className="font-mono font-semibold text-[#171717]">
-                ${(numericSelling! - numericCost!).toFixed(2)}
+                {formatCurrency(numericSelling! - numericCost!)}
               </span>{" "}
               per unit
             </div>

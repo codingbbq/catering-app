@@ -8,6 +8,7 @@ import type {
 } from "@catering/shared-types";
 import { useForm } from "@tanstack/react-form";
 import { z } from "zod";
+import { useTenantCurrency } from "@/features/tenancy/tenant-provider";
 
 export interface CustomerOption {
   id: string;
@@ -49,6 +50,7 @@ export function EnquiryForm({
   onCancel,
   submitLabel,
 }: EnquiryFormProps) {
+  const { currencySymbol } = useTenantCurrency();
   const form = useForm({
     defaultValues: {
       customerId: initialValues?.customerId ?? (customerOptions[0]?.id ?? ""),
@@ -274,17 +276,22 @@ export function EnquiryForm({
             {(field) => (
               <div className="space-y-1">
                 <label htmlFor="estimatedBudget" className="block text-xs font-medium text-[#262626]">
-                  Estimated Budget
+                  Estimated Budget ({currencySymbol})
                 </label>
-                <input
-                  id="estimatedBudget"
-                  type="number"
-                  step="0.01"
-                  placeholder="e.g. 50000.00"
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  className="w-full rounded-md border border-[#E5E5E5] px-3 py-2 text-xs font-mono text-[#171717] placeholder:text-[#A3A3A3] focus:border-[#171717] focus:outline-hidden"
-                />
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-3 flex items-center text-xs text-[#737373]">
+                    {currencySymbol}
+                  </span>
+                  <input
+                    id="estimatedBudget"
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g. 50000.00"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    className="w-full rounded-md border border-[#E5E5E5] pl-7 pr-3 py-2 text-xs font-mono text-[#171717] placeholder:text-[#A3A3A3] focus:border-[#171717] focus:outline-hidden"
+                  />
+                </div>
               </div>
             )}
           </form.Field>
