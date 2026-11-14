@@ -3,17 +3,17 @@ export interface CommunicationProviderResult {
   providerMessageId: string;
   status: 'sent' | 'delivered' | 'failed';
   sentAt: Date;
-  deliveredAt?: Date;
-  errorMessage?: string;
+  deliveredAt?: Date | undefined;
+  errorMessage?: string | undefined;
 }
 
 export interface SendMessagePayload {
   channel: 'email' | 'sms' | 'whatsapp' | 'internal_note';
   recipient: string;
-  sender?: string;
-  subject?: string;
+  sender?: string | undefined;
+  subject?: string | undefined;
   content: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, any> | undefined;
 }
 
 export interface CommunicationProvider {

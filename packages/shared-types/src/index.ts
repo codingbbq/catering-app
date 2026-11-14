@@ -1748,7 +1748,7 @@ export const createCommunicationSchema = z.object({
   metadata: z.record(z.string(), z.any()).optional().nullable(),
   isDraft: z.boolean().optional().default(false),
 });
-export type CreateCommunicationRequest = z.infer<typeof createCommunicationSchema>;
+export type CreateCommunicationRequest = z.input<typeof createCommunicationSchema>;
 
 export const communicationFilterParamsSchema = z.object({
   channel: z.enum(["all", "email", "sms", "whatsapp", "internal_note"]).optional(),
@@ -1784,4 +1784,408 @@ export const communicationListResponseSchema = z.object({
 });
 export type CommunicationListResponse = z.infer<typeof communicationListResponseSchema>;
 
+
+
+
+// ==========================================
+// FIN-001: Invoicing Module
+// ==========================================
+
+export const invoiceStatusSchema = z.enum([
+  "draft",
+  "issued",
+  "partially_paid",
+  "paid",
+  "void",
+]);
+export type InvoiceStatus = z.infer<typeof invoiceStatusSchema>;
+
+export const invoicePaymentMethodSchema = z.enum([
+  "bank_transfer",
+  "cash",
+  "credit_card",
+  "cheque",
+  "online",
+  "other",
+]);
+export type InvoicePaymentMethod = z.infer<typeof invoicePaymentMethodSchema>;
+
+export const invoiceLineItemSchema = z.object({
+  id: z.string().uuid(),
+  invoiceId: z.string().uuid(),
+  description: z.string().min(1, "Description is required"),
+  quantity: z.number().positive(),
+  unitPrice: z.number().nonnegative(),
+  totalAmount: z.number().nonnegative(),
+  notes: z.string().nullable().optional(),
+  sortOrder: z.number().int().default(0),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type InvoiceLineItem = z.infer<typeof invoiceLineItemSchema>;
+
+export const createInvoiceLineItemSchema = z.object({
+  id: z.string().uuid().optional(),
+  description: z.string().min(1, "Description is required"),
+  quantity: z.number().positive("Quantity must be greater than 0"),
+  unitPrice: z.number().nonnegative("Unit price cannot be negative"),
+  notes: z.string().optional().nullable(),
+  sortOrder: z.number().int().optional().default(0),
+});
+export type CreateInvoiceLineItemRequest = z.infer<typeof createInvoiceLineItemSchema>;
+
+export const invoicePaymentSchema = z.object({
+  id: z.string().uuid(),
+  tenantId: z.string().uuid(),
+  invoiceId: z.string().uuid(),
+  amount: z.number().positive("Payment amount must be greater than 0"),
+  paymentDate: z.string(),
+  paymentMethod: invoicePaymentMethodSchema,
+  reference: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  recordedBy: z.string().nullable().optional(),
+  createdAt: z.string(),
+});
+export type InvoicePayment = z.infer<typeof invoicePaymentSchema>;
+
+export const recordInvoicePaymentSchema = z.object({
+  amount: z.number().positive("Payment amount must be greater than 0"),
+  paymentDate: z.string().min(1, "Payment date is required"),
+  paymentMethod: invoicePaymentMethodSchema.default("bank_transfer"),
+  reference: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+});
+export type RecordInvoicePaymentRequest = z.infer<typeof recordInvoicePaymentSchema>;
+
+export const invoiceListItemSchema = z.object({
+  id: z.string().uuid(),
+  tenantId: z.string().uuid(),
+  invoiceNumber: z.string(),
+  status: invoiceStatusSchema,
+  customerId: z.string().uuid(),
+  customerName: z.string(),
+  customerEmail: z.string().nullable().optional(),
+  customerPhone: z.string().nullable().optional(),
+  bookingId: z.string().uuid().nullable().optional(),
+  bookingNumber: z.string().nullable().optional(),
+  title: z.string(),
+  issueDate: z.string(),
+  dueDate: z.string(),
+  currency: z.string(),
+  subtotal: z.number().nonnegative(),
+  taxRate: z.number().nonnegative(),
+  taxAmount: z.number().nonnegative(),
+  discountAmount: z.number().nonnegative(),
+  totalAmount: z.number().nonnegative(),
+  paidAmount: z.number().nonnegative(),
+  balanceDue: z.number().nonnegative(),
+  isOverdue: z.boolean(),
+  issuedAt: z.string().nullable().optional(),
+  voidedAt: z.string().nullable().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type InvoiceListItem = z.infer<typeof invoiceListItemSchema>;
+
+export const invoiceDetailSchema = z.object({
+  id: z.string().uuid(),
+  tenantId: z.string().uuid(),
+  invoiceNumber: z.string(),
+  status: invoiceStatusSchema,
+  customerId: z.string().uuid(),
+  customer: z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    email: z.string().nullable().optional(),
+    phone: z.string().nullable().optional(),
+    company: z.string().nullable().optional(),
+    address: z.string().nullable().optional(),
+  }),
+  bookingId: z.string().uuid().nullable().optional(),
+  booking: z
+    .object({
+      id: z.string().uuid(),
+      bookingNumber: z.string(),
+      title: z.string(),
+      eventDate: z.string(),
+    })
+    .nullable()
+    .optional(),
+  title: z.string(),
+  issueDate: z.string(),
+  dueDate: z.string(),
+  currency: z.string(),
+  subtotal: z.number().nonnegative(),
+  taxRate: z.number().nonnegative(),
+  taxAmount: z.number().nonnegative(),
+  discountAmount: z.number().nonnegative(),
+  totalAmount: z.number().nonnegative(),
+  paidAmount: z.number().nonnegative(),
+  balanceDue: z.number().nonnegative(),
+  isOverdue: z.boolean(),
+  notes: z.string().nullable().optional(),
+  terms: z.string().nullable().optional(),
+  issuedAt: z.string().nullable().optional(),
+  voidedAt: z.string().nullable().optional(),
+  voidReason: z.string().nullable().optional(),
+  lineItems: z.array(invoiceLineItemSchema),
+  payments: z.array(invoicePaymentSchema),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type InvoiceDetail = z.infer<typeof invoiceDetailSchema>;
+
+export const invoiceStatsSchema = z.object({
+  totalInvoiced: z.number().nonnegative(),
+  totalPaid: z.number().nonnegative(),
+  totalOutstanding: z.number().nonnegative(),
+  draftCount: z.number().int().nonnegative(),
+  issuedCount: z.number().int().nonnegative(),
+  partiallyPaidCount: z.number().int().nonnegative(),
+  paidCount: z.number().int().nonnegative(),
+  voidCount: z.number().int().nonnegative(),
+  overdueCount: z.number().int().nonnegative(),
+});
+export type InvoiceStats = z.infer<typeof invoiceStatsSchema>;
+
+export const invoiceListResponseSchema = z.object({
+  items: z.array(invoiceListItemSchema),
+  stats: invoiceStatsSchema,
+  total: z.number().int().nonnegative(),
+});
+export type InvoiceListResponse = z.infer<typeof invoiceListResponseSchema>;
+
+export const createInvoiceRequestSchema = z.object({
+  customerId: z.string().uuid("Customer is required"),
+  bookingId: z.string().uuid().optional().nullable(),
+  title: z.string().min(1, "Invoice title is required"),
+  issueDate: z.string().min(1, "Issue date is required"),
+  dueDate: z.string().min(1, "Due date is required"),
+  currency: z.string().optional(),
+  taxRate: z.number().min(0).max(100).default(0),
+  discountAmount: z.number().min(0).default(0),
+  notes: z.string().optional().nullable(),
+  terms: z.string().optional().nullable(),
+  lineItems: z.array(createInvoiceLineItemSchema).min(1, "At least one line item is required"),
+});
+export type CreateInvoiceRequest = z.infer<typeof createInvoiceRequestSchema>;
+
+export const createInvoiceFromBookingRequestSchema = z.object({
+  bookingId: z.string().uuid("Booking is required"),
+  issueDate: z.string().optional(),
+  dueDate: z.string().optional(),
+  taxRate: z.number().min(0).max(100).optional().default(0),
+  discountAmount: z.number().min(0).optional().default(0),
+  notes: z.string().optional().nullable(),
+  terms: z.string().optional().nullable(),
+});
+export type CreateInvoiceFromBookingRequest = z.infer<typeof createInvoiceFromBookingRequestSchema>;
+
+export const updateInvoiceRequestSchema = z.object({
+  title: z.string().min(1, "Invoice title is required").optional(),
+  customerId: z.string().uuid().optional(),
+  issueDate: z.string().optional(),
+  dueDate: z.string().optional(),
+  currency: z.string().optional(),
+  taxRate: z.number().min(0).max(100).optional(),
+  discountAmount: z.number().min(0).optional(),
+  notes: z.string().optional().nullable(),
+  terms: z.string().optional().nullable(),
+  lineItems: z.array(createInvoiceLineItemSchema).min(1).optional(),
+});
+export type UpdateInvoiceRequest = z.infer<typeof updateInvoiceRequestSchema>;
+
+export const voidInvoiceRequestSchema = z.object({
+  voidReason: z.string().min(1, "Void reason is required"),
+});
+export type VoidInvoiceRequest = z.infer<typeof voidInvoiceRequestSchema>;
+
+export const invoiceFilterParamsSchema = z.object({
+  status: z.enum(["all", "draft", "issued", "partially_paid", "paid", "void", "overdue"]).optional(),
+  customerId: z.string().uuid().optional(),
+  bookingId: z.string().uuid().optional(),
+  fromDate: z.string().optional(),
+  toDate: z.string().optional(),
+  search: z.string().optional(),
+  page: z.number().int().positive().optional(),
+  limit: z.number().int().positive().optional(),
+});
+export type InvoiceFilterParams = z.infer<typeof invoiceFilterParamsSchema>;
+
+export function calculateInvoiceTotals(
+  items: Array<{ quantity: number; unitPrice: number }>,
+  taxRate: number = 0,
+  discountAmount: number = 0,
+) {
+  const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
+
+  const subtotal = round2(
+    items.reduce((sum, item) => sum + round2(item.quantity * item.unitPrice), 0),
+  );
+  const safeDiscount = Math.min(round2(Math.max(0, discountAmount)), subtotal);
+  const taxableBase = Math.max(0, round2(subtotal - safeDiscount));
+  const taxAmount = round2(taxableBase * (taxRate / 100));
+  const totalAmount = round2(taxableBase + taxAmount);
+
+  return {
+    subtotal,
+    discountAmount: safeDiscount,
+    taxAmount,
+    totalAmount,
+  };
+}
+
+// ============================================================================
+// FIN-002: Payments Module
+// ============================================================================
+
+export const paymentStatusSchema = z.enum([
+  "unallocated",
+  "partially_allocated",
+  "allocated",
+  "void",
+]);
+export type PaymentStatus = z.infer<typeof paymentStatusSchema>;
+
+export const paymentMethodSchema = z.enum([
+  "bank_transfer",
+  "cash",
+  "credit_card",
+  "cheque",
+  "online",
+  "other",
+]);
+export type PaymentMethod = z.infer<typeof paymentMethodSchema>;
+
+export const paymentAllocationSchema = z.object({
+  id: z.string().uuid(),
+  tenantId: z.string().uuid(),
+  paymentId: z.string().uuid(),
+  invoiceId: z.string().uuid(),
+  invoiceNumber: z.string().optional(),
+  invoiceTitle: z.string().optional(),
+  invoiceTotal: z.number().optional(),
+  invoiceBalanceDue: z.number().optional(),
+  amount: z.number().positive(),
+  notes: z.string().nullable().optional(),
+  createdAt: z.string(),
+});
+export type PaymentAllocation = z.infer<typeof paymentAllocationSchema>;
+
+export const createPaymentAllocationItemSchema = z.object({
+  invoiceId: z.string().uuid("Invoice ID is required"),
+  amount: z.number().positive("Allocation amount must be greater than 0"),
+  notes: z.string().optional().nullable(),
+});
+export type CreatePaymentAllocationItem = z.infer<typeof createPaymentAllocationItemSchema>;
+
+export const createPaymentAllocationsRequestSchema = z.object({
+  allocations: z.array(createPaymentAllocationItemSchema).min(1, "At least one allocation is required"),
+});
+export type CreatePaymentAllocationsRequest = z.infer<typeof createPaymentAllocationsRequestSchema>;
+
+export const paymentListItemSchema = z.object({
+  id: z.string().uuid(),
+  tenantId: z.string().uuid(),
+  paymentNumber: z.string(),
+  customerId: z.string().uuid(),
+  customerName: z.string(),
+  customerEmail: z.string().nullable().optional(),
+  amount: z.number().positive(),
+  currency: z.string(),
+  paymentDate: z.string(),
+  paymentMethod: paymentMethodSchema,
+  status: paymentStatusSchema,
+  reference: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  allocatedAmount: z.number().nonnegative(),
+  unallocatedAmount: z.number().nonnegative(),
+  allocationCount: z.number().int().nonnegative().optional(),
+  voidedAt: z.string().nullable().optional(),
+  voidReason: z.string().nullable().optional(),
+  createdAt: z.string(),
+});
+export type PaymentListItem = z.infer<typeof paymentListItemSchema>;
+
+export const paymentDetailSchema = z.object({
+  id: z.string().uuid(),
+  tenantId: z.string().uuid(),
+  paymentNumber: z.string(),
+  customerId: z.string().uuid(),
+  customerName: z.string(),
+  customerEmail: z.string().nullable().optional(),
+  customerPhone: z.string().nullable().optional(),
+  amount: z.number().positive(),
+  currency: z.string(),
+  paymentDate: z.string(),
+  paymentMethod: paymentMethodSchema,
+  status: paymentStatusSchema,
+  reference: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  recordedBy: z.string().nullable().optional(),
+  allocatedAmount: z.number().nonnegative(),
+  unallocatedAmount: z.number().nonnegative(),
+  voidedAt: z.string().nullable().optional(),
+  voidReason: z.string().nullable().optional(),
+  allocations: z.array(paymentAllocationSchema),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type PaymentDetail = z.infer<typeof paymentDetailSchema>;
+
+export const createPaymentRequestSchema = z.object({
+  customerId: z.string().uuid("Customer is required"),
+  amount: z.number().positive("Payment amount must be greater than 0"),
+  currency: z.string().optional(),
+  paymentDate: z.string().min(1, "Payment date is required"),
+  paymentMethod: paymentMethodSchema.default("bank_transfer"),
+  reference: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  allocations: z.array(createPaymentAllocationItemSchema).optional(),
+});
+export type CreatePaymentRequest = z.infer<typeof createPaymentRequestSchema>;
+
+export const updatePaymentRequestSchema = z.object({
+  paymentDate: z.string().optional(),
+  paymentMethod: paymentMethodSchema.optional(),
+  reference: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+});
+export type UpdatePaymentRequest = z.infer<typeof updatePaymentRequestSchema>;
+
+export const voidPaymentRequestSchema = z.object({
+  voidReason: z.string().min(1, "Void reason is required"),
+});
+export type VoidPaymentRequest = z.infer<typeof voidPaymentRequestSchema>;
+
+export const paymentFilterParamsSchema = z.object({
+  status: z.enum(["all", "unallocated", "partially_allocated", "allocated", "void"]).optional(),
+  customerId: z.string().uuid().optional(),
+  paymentMethod: paymentMethodSchema.optional(),
+  fromDate: z.string().optional(),
+  toDate: z.string().optional(),
+  search: z.string().optional(),
+  page: z.number().int().positive().optional(),
+  limit: z.number().int().positive().optional(),
+});
+export type PaymentFilterParams = z.infer<typeof paymentFilterParamsSchema>;
+
+export const paymentStatsSchema = z.object({
+  totalReceived: z.number().nonnegative(),
+  totalAllocated: z.number().nonnegative(),
+  totalUnallocated: z.number().nonnegative(),
+  totalPayments: z.number().int().nonnegative(),
+  unallocatedPaymentsCount: z.number().int().nonnegative(),
+  currency: z.string(),
+});
+export type PaymentStats = z.infer<typeof paymentStatsSchema>;
+
+export const paymentListResponseSchema = z.object({
+  items: z.array(paymentListItemSchema),
+  total: z.number().int().nonnegative(),
+  page: z.number().int().positive(),
+  limit: z.number().int().positive(),
+  totalPages: z.number().int().nonnegative(),
+});
+export type PaymentListResponse = z.infer<typeof paymentListResponseSchema>;
 

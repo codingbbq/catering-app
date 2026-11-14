@@ -31,13 +31,13 @@ export const COMMON_CURRENCY_OPTIONS = [
  * Returns the short symbol for a given currency code (e.g. "INR" -> "₹", "USD" -> "$").
  */
 export function getCurrencySymbol(currencyCode?: string): string {
-  if (!currencyCode) return "$";
+  if (!currencyCode) return "₹";
   const upper = currencyCode.toUpperCase().trim();
   if (WELL_KNOWN_CURRENCIES[upper]) {
     return WELL_KNOWN_CURRENCIES[upper].symbol;
   }
   try {
-    const parts = new Intl.NumberFormat("en-US", {
+    const parts = new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: upper,
     }).formatToParts(1);
@@ -60,7 +60,7 @@ export interface FormatCurrencyOptions {
  */
 export function formatCurrency(
   amount: number | null | undefined,
-  currencyCode: string = "USD",
+  currencyCode: string = "INR",
   locale?: string,
   options?: FormatCurrencyOptions,
 ): string {
@@ -70,7 +70,7 @@ export function formatCurrency(
   }
 
   const num = Number(amount);
-  const code = (currencyCode || "USD").toUpperCase().trim();
+  const code = (currencyCode || "INR").toUpperCase().trim();
   const targetLocale =
     locale || (code === "INR" ? "en-IN" : WELL_KNOWN_CURRENCIES[code]?.defaultLocale || "en-US");
 

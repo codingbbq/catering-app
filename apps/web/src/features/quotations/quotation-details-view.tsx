@@ -21,6 +21,7 @@ import {
   updateDraftRevision,
 } from "@/lib/quotations-api";
 import { useAuth } from "@/providers/auth-provider";
+import { EntityCommunicationsTimeline } from "@/features/communications/entity-communications-timeline";
 import { QuotationForm } from "./quotation-form";
 import { QuotationStatusBadge } from "./quotation-status-badge";
 
@@ -892,6 +893,21 @@ export function QuotationDetailsView({
                 </CardContent>
               </Card>
             </div>
+          </div>
+
+          {/* Customer Communication Timeline */}
+          <div className="pt-4 border-t border-[#E5E5E5]">
+            <EntityCommunicationsTimeline
+              tenantSlug={tenantSlug}
+              entityType="quotation"
+              entityId={quotation.id}
+              entityLabel={quotation.quotationNumber}
+              customerName={quotation.customerName}
+              recipientEmail={quotation.customerEmail || undefined}
+              recipientPhone={quotation.customerPhone || undefined}
+              quotationNumber={quotation.quotationNumber}
+              amount={Number(activeRevision.totalAmount)}
+            />
           </div>
         </div>
       )}

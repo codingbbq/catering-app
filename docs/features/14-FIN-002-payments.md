@@ -87,3 +87,28 @@ Track payments received against invoices so tenant businesses can manage balance
 
 - online payment gateway capture in the first release
 - bank feed reconciliation
+
+## Implementation Notes & Verification
+
+- **Status**: Completed
+- **Data Model**:
+  - `Payment`: sequential identifier (`PAY-YYYYMM-XXXX`), `customerId`, `amount`, `currency` (tenant-specific, defaults to database `currencyCode`), `paymentDate`, `paymentMethod`, `status` (`unallocated`, `partially_allocated`, `allocated`, `void`), `reference`, `notes`, `allocatedAmount`, `unallocatedAmount`, `voidedAt`, `voidReason`.
+  - `PaymentAllocation`: links `Payment` to `Invoice` with allocated `amount` and `notes`.
+  - Cascading rules and multi-tenant indexes scoped strictly by `tenantId`.
+- **API Endpoints**:
+  - `GET /payments`: filter by status, method, customer, date range, pagination, and search.
+  - `GET /payments/stats`: financial metrics (total received, allocated, unallocated, active count).
+  - `POST /payments`: record payment receipt with atomic allocations and invoice balance recalculation.
+  - `GET /payments/:id`: detailed breakdown including customer info and invoice allocations.
+  - `POST /payments/:id/allocations`: allocate unallocated funds to customer invoices with over-allocation prevention.
+  - `DELETE /payments/:id/allocations/:allocationId`: deallocate/reverse allocation, restoring invoice balance and payment unallocated balance.
+  - `POST /payments/:id/void`: void payment with reason capture and reversal of all associated invoice allocations.
+- **Frontend Web UI**:
+  - Executive Monochrome UI (`#171717` primary, `#F5F5F4` canvas, `#FFFFFF` cards, `#E5E5E5` borders).
+  - Responsive table with KPI cards, search, status filter pills, method dropdown, and direct detail routing.
+  - Record payment modal with customer selection, automated outstanding invoice balance loading, and auto-distribute features.
+  - Payment details view with financial breakdown, allocation progress bar, customer card, allocations table with inline deallocation, and void modal.
+  - Strict adherence to tenant currency via `useTenantCurrency` (`formatCurrency`, `currencyCode`).
+- **Tests**:
+  - Comprehensive unit test suite in `apps/api/src/payments/payments.service.spec.ts` (11 tests).
+  - TypeScript compiler checks pass with 0 errors across `apps/api`, `apps/web`, and `packages/shared-types`.

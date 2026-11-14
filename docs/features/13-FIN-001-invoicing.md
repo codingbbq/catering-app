@@ -90,3 +90,16 @@ Generate invoices from commercial commitments such as bookings and daily meal or
 
 - full accounting ledger
 - external accounting package synchronization
+
+
+## Implementation Status
+
+- Status: Completed
+- Models: `Invoice`, `InvoiceLineItem`, `InvoicePayment` in Prisma schema with cascade delete & relations.
+- Numbering: `INV-YYYYMM-XXXX` auto-incrementing per tenant.
+- Currency Consistency: Fully adheres to tenant's configured currency (`tenantSettings.currencyCode`, e.g. INR ₹, USD $, EUR €) across storage, calculations, API responses, and frontend views (`useTenantCurrency()`).
+- Lifecycle: `draft` -> `issued` -> `partially_paid` -> `paid` / `void`. Automatic overdue detection when `dueDate < today` and `balanceDue > 0`.
+- Payments: Multi-method payment recording (`bank_transfer`, `cash`, `credit_card`, `cheque`, `online`, `other`) with automatic balance calculation and status transition.
+- Void Policy: Prohibits voiding invoices with recorded payments without adjustment; requires void reason and writes audit logs.
+- Source Linkage: Direct linkage to `Booking`, pre-filling items from accepted Quotations, and creating activity timeline records.
+- UI: Worklist dashboard with financial KPI cards, status tabs, search, creation form, customer-ready printable invoice view, payment modal, and void modal.

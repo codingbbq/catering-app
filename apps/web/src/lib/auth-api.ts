@@ -64,3 +64,17 @@ export function resetPassword(dto: ResetPasswordRequest): Promise<{ message: str
     body: JSON.stringify(dto),
   });
 }
+
+
+export interface PublicTenantInfo {
+  id: string;
+  slug: string;
+  displayName: string;
+  currencyCode: string;
+  locale: string;
+  timezone: string;
+}
+
+export function getPublicTenantInfo(tenantSlug: string): Promise<PublicTenantInfo> {
+  return apiFetch(`/auth/tenant-info/${tenantSlug}`);
+}

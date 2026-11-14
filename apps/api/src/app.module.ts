@@ -10,6 +10,8 @@ import { CostingModule } from './costing/costing.module.js';
 import { QuotationsModule } from './quotations/quotations.module.js';
 import { BookingsModule } from './bookings/bookings.module.js';
 import { CommunicationsModule } from './communications/communications.module.js';
+import { InvoicesModule } from './invoices/invoices.module.js';
+import { PaymentsModule } from './payments/payments.module.js';
 import { PlatformTenantsModule } from './platform-tenants/platform-tenants.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { TenancyModule } from './tenancy/tenancy.module.js';
@@ -30,6 +32,8 @@ import { TenantAdminModule } from './tenant-admin/tenant-admin.module.js';
     QuotationsModule,
     BookingsModule,
     CommunicationsModule,
+    InvoicesModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

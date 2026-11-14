@@ -84,6 +84,32 @@ export class AuthService {
     };
   }
 
+  // --- Tenant public info ---
+
+  async getTenantInfo(tenantSlug: string) {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { slug: tenantSlug },
+      include: { settings: true },
+    });
+
+    if (!tenant) {
+      throw new NotFoundException(`Tenant "${tenantSlug}" not found.`);
+    }
+
+    const currencyCode = tenant.settings?.currencyCode || 'INR';
+    const locale = tenant.settings?.locale || (currencyCode === 'INR' ? 'en-IN' : 'en-US');
+    const timezone = tenant.settings?.timezone || 'Asia/Kolkata';
+
+    return {
+      id: tenant.id,
+      slug: tenant.slug,
+      displayName: tenant.displayName,
+      currencyCode,
+      locale,
+      timezone,
+    };
+  }
+
   // --- Tenant sign-in ---
 
   async tenantSignIn(dto: SignInRequest, tenantSlug: string): Promise<TenantSignInResponse> {

@@ -12,6 +12,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { AuditLogService } from '../tenancy/audit-log.service.js';
 import {
   CommunicationProvider,
   MockCommunicationProvider,
@@ -64,7 +65,10 @@ const DEFAULT_TEMPLATES = [
 export class CommunicationsService {
   private readonly provider: CommunicationProvider;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditLogService: AuditLogService,
+  ) {
     this.provider = new MockCommunicationProvider();
   }
 
@@ -357,10 +361,10 @@ export class CommunicationsService {
       const providerResult = await this.provider.send({
         channel: dto.channel,
         recipient: dto.recipient,
-        sender: dto.sender,
-        subject: dto.subject,
+        sender: dto.sender ?? undefined,
+        subject: dto.subject ?? undefined,
         content: dto.content,
-        metadata: dto.metadata || undefined,
+        metadata: dto.metadata ?? undefined,
       });
 
       providerName = providerResult.provider;
@@ -372,28 +376,31 @@ export class CommunicationsService {
     }
 
     // 3. Persist CommunicationLog
+    const logData: any = {
+      tenantId,
+      customerId: customerId || null,
+      enquiryId: enquiryId || null,
+      quotationId: quotationId || null,
+      bookingId: bookingId || null,
+      channel: dto.channel,
+      direction: dto.direction || 'outbound',
+      status: status as any,
+      recipient: dto.recipient,
+      sender: dto.sender || null,
+      subject: dto.subject || null,
+      content: dto.content,
+      provider: providerName,
+      retryCount: 0,
+    };
+
+    if (dto.metadata) logData.metadata = dto.metadata;
+    if (providerMessageId) logData.providerMessageId = providerMessageId;
+    if (errorMessage) logData.errorMessage = errorMessage;
+    if (sentAt) logData.sentAt = sentAt;
+    if (deliveredAt) logData.deliveredAt = deliveredAt;
+
     const log = await this.prisma.communicationLog.create({
-      data: {
-        tenantId,
-        customerId: customerId || null,
-        enquiryId: enquiryId || null,
-        quotationId: quotationId || null,
-        bookingId: bookingId || null,
-        channel: dto.channel,
-        direction: dto.direction || 'outbound',
-        status: status as any,
-        recipient: dto.recipient,
-        sender: dto.sender || null,
-        subject: dto.subject || null,
-        content: dto.content,
-        metadata: dto.metadata || undefined,
-        provider: providerName,
-        providerMessageId,
-        errorMessage,
-        retryCount: 0,
-        sentAt,
-        deliveredAt,
-      },
+      data: logData,
       include: {
         customer: { select: { id: true, name: true, email: true, phone: true } },
         enquiry: { select: { id: true, title: true } },
@@ -419,24 +426,19 @@ export class CommunicationsService {
     }
 
     // 5. Audit Log
-    try {
-      await this.prisma.auditLog.create({
-        data: {
-          tenantId,
-          userId,
-          action: 'communication.created',
-          entityType: 'CommunicationLog',
-          entityId: log.id,
-          details: {
-            channel: dto.channel,
-            recipient: dto.recipient,
-            status,
-          },
-        },
-      });
-    } catch {
-      // Non-blocking
-    }
+    this.auditLogService.record({
+      scope: 'tenant',
+      tenantId,
+      actorType: userId ? 'tenant_user' : 'system',
+      action: 'communication.created',
+      outcome: 'allowed',
+      metadata: {
+        communicationId: log.id,
+        channel: dto.channel,
+        recipient: dto.recipient,
+        status,
+      },
+    });
 
     return this.mapToItem(log);
   }
@@ -462,23 +464,25 @@ export class CommunicationsService {
     const providerResult = await this.provider.send({
       channel: existing.channel as any,
       recipient: existing.recipient,
-      sender: existing.sender || undefined,
-      subject: existing.subject || undefined,
+      sender: existing.sender ?? undefined,
+      subject: existing.subject ?? undefined,
       content: existing.content,
-      metadata: (existing.metadata as Record<string, any>) || undefined,
+      metadata: (existing.metadata as Record<string, any>) ?? undefined,
     });
+
+    const updateData: any = {
+      status: providerResult.status as any,
+      provider: providerResult.provider,
+      providerMessageId: providerResult.providerMessageId,
+      errorMessage: providerResult.errorMessage || null,
+      sentAt: providerResult.sentAt,
+      deliveredAt: providerResult.deliveredAt || null,
+      retryCount: { increment: 1 },
+    };
 
     const updated = await this.prisma.communicationLog.update({
       where: { id },
-      data: {
-        status: providerResult.status as any,
-        provider: providerResult.provider,
-        providerMessageId: providerResult.providerMessageId,
-        errorMessage: providerResult.errorMessage || null,
-        sentAt: providerResult.sentAt,
-        deliveredAt: providerResult.deliveredAt || null,
-        retryCount: { increment: 1 },
-      },
+      data: updateData,
       include: {
         customer: { select: { id: true, name: true, email: true, phone: true } },
         enquiry: { select: { id: true, title: true } },
@@ -487,23 +491,18 @@ export class CommunicationsService {
       },
     });
 
-    try {
-      await this.prisma.auditLog.create({
-        data: {
-          tenantId,
-          userId,
-          action: 'communication.retried',
-          entityType: 'CommunicationLog',
-          entityId: updated.id,
-          details: {
-            attemptNumber: updated.retryCount,
-            resultStatus: updated.status,
-          },
-        },
-      });
-    } catch {
-      // Non-blocking
-    }
+    this.auditLogService.record({
+      scope: 'tenant',
+      tenantId,
+      actorType: userId ? 'tenant_user' : 'system',
+      action: 'communication.retried',
+      outcome: 'allowed',
+      metadata: {
+        communicationId: updated.id,
+        attemptNumber: String(updated.retryCount),
+        resultStatus: updated.status,
+      },
+    });
 
     return this.mapToItem(updated);
   }

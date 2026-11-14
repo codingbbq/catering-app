@@ -11,6 +11,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
+import { EntityCommunicationsTimeline } from "@/features/communications/entity-communications-timeline";
 import { EnquiryActivityTimeline } from "@/features/enquiries/enquiry-activity-timeline";
 import { EnquiryForm } from "@/features/enquiries/enquiry-form";
 import { EnquiryStatusBadge } from "@/features/enquiries/enquiry-status-badge";
@@ -37,6 +38,7 @@ export default function EnquiryDetailPage() {
   const { formatCurrency } = useTenantCurrency();
 
   const [isEditing, setIsEditing] = useState(false);
+  const [feedTab, setFeedTab] = useState<"activities" | "communications">("activities");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showLostDialog, setShowLostDialog] = useState(false);
   const [lostReasonInput, setLostReasonInput] = useState("");
@@ -401,15 +403,55 @@ export default function EnquiryDetailPage() {
           )}
         </div>
 
-        {/* Right Column: Activity Feed & Log Note */}
-        <div className="lg:col-span-1">
-          <EnquiryActivityTimeline
-            activities={enquiry.activities}
-            onAddActivity={async (data) => {
-              await addActivityMutation.mutateAsync(data);
-            }}
-            isPending={addActivityMutation.isPending}
-          />
+        {/* Right Column: Activity Feed & Communications */}
+        <div className="lg:col-span-1 space-y-4">
+          <div className="flex border-b border-[#E5E5E5] bg-white rounded-lg p-1">
+            <button
+              type="button"
+              onClick={() => setFeedTab("activities")}
+              className={`flex-1 rounded py-1.5 text-xs font-medium transition-colors ${
+                feedTab === "activities"
+                  ? "bg-[#171717] text-white"
+                  : "text-[#737373] hover:text-[#171717]"
+              }`}
+            >
+              Activities & Notes
+            </button>
+            <button
+              type="button"
+              onClick={() => setFeedTab("communications")}
+              className={`flex-1 rounded py-1.5 text-xs font-medium transition-colors ${
+                feedTab === "communications"
+                  ? "bg-[#171717] text-white"
+                  : "text-[#737373] hover:text-[#171717]"
+              }`}
+            >
+              Communications
+            </button>
+          </div>
+
+          {feedTab === "activities" ? (
+            <EnquiryActivityTimeline
+              activities={enquiry.activities}
+              onAddActivity={async (data) => {
+                await addActivityMutation.mutateAsync(data);
+              }}
+              isPending={addActivityMutation.isPending}
+            />
+          ) : (
+            <EntityCommunicationsTimeline
+              tenantSlug={tenantSlug}
+              entityType="enquiry"
+              entityId={enquiry.id}
+              entityLabel={enquiry.title}
+              customerName={enquiry.customerName}
+              recipientEmail={enquiry.customerEmail ?? undefined}
+              recipientPhone={enquiry.customerPhone ?? undefined}
+              eventDate={enquiry.eventDate ?? undefined}
+              venue={enquiry.venue ?? undefined}
+              amount={enquiry.estimatedBudget ? Number(enquiry.estimatedBudget) : undefined}
+            />
+          )}
         </div>
       </div>
     </div>

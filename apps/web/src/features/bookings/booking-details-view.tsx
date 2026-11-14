@@ -1,12 +1,15 @@
 "use client";
 
 import type { BookingDetail } from "@catering/shared-types";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/providers/auth-provider";
 import { useTenantCurrency } from "@/features/tenancy/tenant-provider";
 import { cancelBooking, confirmBooking } from "@/lib/bookings-api";
+import { listInvoices } from "@/lib/invoices-api";
+import { InvoiceStatusBadge } from "@/features/invoices/invoice-status-badge";
+import { EntityCommunicationsTimeline } from "@/features/communications/entity-communications-timeline";
 import { BookingStatusBadge } from "./booking-status-badge";
 
 interface BookingDetailsViewProps {
@@ -25,6 +28,13 @@ export function BookingDetailsView({ booking, tenantSlug }: BookingDetailsViewPr
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [confirmNotes, setConfirmNotes] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // Fetch invoices linked to this booking
+  const { data: invoicesData } = useQuery({
+    queryKey: ["invoices", { bookingId: booking.id }],
+    queryFn: () => listInvoices(accessToken!, { bookingId: booking.id }),
+    enabled: !!accessToken && !!booking.id,
+  });
 
   const confirmMutation = useMutation({
     mutationFn: async () => {
@@ -113,6 +123,15 @@ export function BookingDetailsView({ booking, tenantSlug }: BookingDetailsViewPr
             >
               Cancel Booking
             </button>
+          )}
+
+          {booking.status !== "cancelled" && (
+            <Link
+              href={`/tenant/${tenantSlug}/invoices/new?bookingId=${booking.id}`}
+              className="rounded border border-[#E5E5E5] bg-white px-3.5 py-1.5 text-xs font-medium text-[#171717] hover:bg-[#FAFAFA] transition-colors flex items-center gap-1.5"
+            >
+              <span>+</span> Create Invoice
+            </Link>
           )}
 
           {booking.status !== "cancelled" && (
@@ -427,6 +446,86 @@ export function BookingDetailsView({ booking, tenantSlug }: BookingDetailsViewPr
               </div>
             </div>
           </div>
+
+          {/* Invoices & Billing Summary Card */}
+          <div className="rounded-lg border border-[#E5E5E5] bg-white p-5 shadow-xs">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-[#737373]">
+                Invoices & Billing
+              </h3>
+              <Link
+                href={`/tenant/${tenantSlug}/invoices/new?bookingId=${booking.id}`}
+                className="text-[11px] font-medium text-[#171717] hover:underline"
+              >
+                + New
+              </Link>
+            </div>
+
+            {invoicesData?.items && invoicesData.items.length > 0 ? (
+              <div className="space-y-3">
+                {invoicesData.items.map((inv) => (
+                  <div
+                    key={inv.id}
+                    className="rounded-md border border-[#F0F0F0] p-2.5 hover:border-[#E5E5E5] transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <Link
+                        href={`/tenant/${tenantSlug}/invoices/${inv.id}`}
+                        className="font-mono text-xs font-semibold text-[#171717] hover:underline"
+                      >
+                        {inv.invoiceNumber}
+                      </Link>
+                      <InvoiceStatusBadge
+                        status={inv.status}
+                        isOverdue={inv.isOverdue}
+                      />
+                    </div>
+                    <div className="mt-1 flex items-baseline justify-between text-xs">
+                      <span className="text-[#737373]">Total:</span>
+                      <span className="font-mono font-medium text-[#171717]">
+                        {formatCurrency(inv.totalAmount, inv.currency)}
+                      </span>
+                    </div>
+                    {inv.balanceDue > 0 && (
+                      <div className="flex items-baseline justify-between text-xs text-amber-700">
+                        <span>Due:</span>
+                        <span className="font-mono font-medium">
+                          {formatCurrency(inv.balanceDue, inv.currency)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-3 text-xs text-[#737373]">
+                <p>No invoices generated yet.</p>
+                <Link
+                  href={`/tenant/${tenantSlug}/invoices/new?bookingId=${booking.id}`}
+                  className="mt-2 inline-block rounded-md border border-[#E5E5E5] px-2.5 py-1 text-[11px] font-medium text-[#171717] hover:bg-[#F5F5F4]"
+                >
+                  Create Invoice
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Customer & Operations Communication Timeline */}
+        <div className="pt-6 border-t border-[#E5E5E5]">
+          <EntityCommunicationsTimeline
+            tenantSlug={tenantSlug}
+            entityType="booking"
+            entityId={booking.id}
+            entityLabel={booking.bookingNumber}
+            customerName={booking.customer.name}
+            recipientEmail={booking.contactEmail || booking.customer.email || undefined}
+            recipientPhone={booking.contactPhone || booking.customer.phone || undefined}
+            bookingNumber={booking.bookingNumber}
+            eventDate={booking.eventDate}
+            venue={booking.venueName || undefined}
+            amount={booking.totalAmount}
+          />
         </div>
       </div>
 

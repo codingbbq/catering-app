@@ -572,6 +572,109 @@ async function main() {
     console.log(`Seeded booking: ${booking2.bookingNumber} (${booking2.title} - confirmed)`);
   }
 
+  // --- Seed Demo Communications ---
+  const existingComm = await prisma.communicationLog.findFirst({
+    where: { tenantId: tenant.id },
+  });
+
+  if (!existingComm) {
+    const quote2 = await prisma.quotation.findFirst({
+      where: { tenantId: tenant.id, quotationNumber: 'QT-202611-0002' },
+    });
+    const booking1 = await prisma.booking.findFirst({
+      where: { tenantId: tenant.id, bookingNumber: 'BK-202611-0001' },
+    });
+
+    await prisma.communicationLog.createMany({
+      data: [
+        {
+          tenantId: tenant.id,
+          customerId: customer1.id,
+          enquiryId: enquiry1 ? enquiry1.id : null,
+          quotationId: quote2 ? quote2.id : null,
+          channel: 'email',
+          direction: 'outbound',
+          status: 'delivered',
+          recipient: 'events@apextech.test',
+          sender: 'sales@democatering.test',
+          subject: 'Quotation QT-202611-0002 for Annual Gala Dinner',
+          content: 'Dear Apex Events Team,\n\nPlease find attached quotation QT-202611-0002 for your upcoming Annual Gala Dinner. The proposal reflects the revised premium cocktail reception and 4-course banquet.',
+          provider: 'mock-provider',
+          providerMessageId: 'mock_email_seed_001',
+          retryCount: 0,
+          sentAt: new Date('2026-11-10T14:30:00Z'),
+          deliveredAt: new Date('2026-11-10T14:31:00Z'),
+        },
+        {
+          tenantId: tenant.id,
+          customerId: customer1.id,
+          enquiryId: enquiry1 ? enquiry1.id : null,
+          bookingId: booking1 ? booking1.id : null,
+          channel: 'whatsapp',
+          direction: 'outbound',
+          status: 'delivered',
+          recipient: '+91 98765 43210',
+          sender: '+91 80 4000 1234',
+          content: 'Hello Vikram! Delighted to confirm booking BK-202611-0001 for Dec 18 at The Grand Peacock Ballroom. Chef team has locked in raw material procurement schedules.',
+          provider: 'mock-provider',
+          providerMessageId: 'mock_wa_seed_002',
+          retryCount: 0,
+          sentAt: new Date('2026-11-11T09:15:00Z'),
+          deliveredAt: new Date('2026-11-11T09:15:30Z'),
+        },
+        {
+          tenantId: tenant.id,
+          customerId: customer1.id,
+          bookingId: booking1 ? booking1.id : null,
+          channel: 'sms',
+          direction: 'outbound',
+          status: 'sent',
+          recipient: '+91 98765 43210',
+          sender: 'DMOCAT',
+          content: 'Reminder: Catering event BK-202611-0001 confirmed for 18-Dec-2026. On-site setup crew arrives at 16:00. Ops Lead: +91 98111 22334.',
+          provider: 'mock-provider',
+          providerMessageId: 'mock_sms_seed_003',
+          retryCount: 0,
+          sentAt: new Date('2026-11-11T16:00:00Z'),
+        },
+        {
+          tenantId: tenant.id,
+          customerId: customer1.id,
+          bookingId: booking1 ? booking1.id : null,
+          channel: 'internal_note',
+          direction: 'outbound',
+          status: 'delivered',
+          recipient: 'Executive Chef & Ops Lead',
+          sender: 'Sales Desk',
+          subject: 'Special VIP Dietary Requirements Flagged',
+          content: 'Guest count increased to 350. Please ensure 40 strictly Jain/gluten-free dessert platters are individually labeled and served on station 3.',
+          provider: 'internal',
+          providerMessageId: 'mock_note_seed_004',
+          retryCount: 0,
+          sentAt: new Date('2026-11-12T08:00:00Z'),
+          deliveredAt: new Date('2026-11-12T08:00:00Z'),
+        },
+        {
+          tenantId: tenant.id,
+          customerId: customer1.id,
+          channel: 'email',
+          direction: 'outbound',
+          status: 'failed',
+          recipient: 'invalid-finance-desk@invalid-domain.test',
+          sender: 'billing@democatering.test',
+          subject: 'Advance Milestone Invoice Reminder',
+          content: 'Please find the advance milestone invoice due for the upcoming corporate catering service.',
+          provider: 'mock-provider',
+          providerMessageId: 'mock_email_failed_005',
+          errorMessage: 'Upstream gateway rejected delivery to invalid-finance-desk@invalid-domain.test: Invalid contact destination.',
+          retryCount: 1,
+          sentAt: new Date('2026-11-12T09:30:00Z'),
+        },
+      ],
+    });
+    console.log('Seeded demo communication logs (Email, WhatsApp, SMS, Internal Note, and Failed Retry test)');
+  }
+
   console.log('\nSeed complete. You can now sign in:');
   console.log('  Platform: POST /platform/auth/sign-in  { email: "admin@platform.test", password: "Admin@12345678" }');
   console.log(`  Tenant:   POST /auth/sign-in/${tenant.slug}  { email: "owner@demo.test", password: "Owner@12345678" }`);

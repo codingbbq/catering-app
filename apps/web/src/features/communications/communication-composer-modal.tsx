@@ -18,15 +18,15 @@ import { ChannelIcon } from "./communication-channel-badge";
 interface ContextEntity {
   type: "enquiry" | "quotation" | "booking" | "customer";
   id: string;
-  label?: string;
-  customerName?: string;
-  recipientEmail?: string;
-  recipientPhone?: string;
-  quotationNumber?: string;
-  bookingNumber?: string;
-  eventDate?: string;
-  venue?: string;
-  amount?: number;
+  label?: string | undefined;
+  customerName?: string | undefined;
+  recipientEmail?: string | undefined;
+  recipientPhone?: string | undefined;
+  quotationNumber?: string | undefined;
+  bookingNumber?: string | undefined;
+  eventDate?: string | undefined;
+  venue?: string | undefined;
+  amount?: number | undefined;
 }
 
 interface CommunicationComposerModalProps {
@@ -44,7 +44,7 @@ export function CommunicationComposerModal({
 }: CommunicationComposerModalProps) {
   const { accessToken } = useAuth();
   const queryClient = useQueryClient();
-  const { currency, formatCurrency } = useTenantCurrency();
+  const { currencyCode, formatCurrency } = useTenantCurrency();
 
   // Form State
   const [channel, setChannel] = useState<CommunicationChannel>("email");
@@ -90,7 +90,7 @@ export function CommunicationComposerModal({
     const venueName = initialContext?.venue || "Your Selected Venue";
     const amountStr = initialContext?.amount
       ? formatCurrency(initialContext.amount)
-      : `${currency} 0.00`;
+      : `${currencyCode} 0.00`;
 
     const replacePlaceholders = (text: string) => {
       return text
@@ -100,7 +100,7 @@ export function CommunicationComposerModal({
         .replace(/\{\{event_date\}\}/g, evDate)
         .replace(/\{\{venue\}\}/g, venueName)
         .replace(/\{\{amount\}\}/g, amountStr)
-        .replace(/\{\{currency\}\}/g, currency);
+        .replace(/\{\{currency\}\}/g, currencyCode);
     };
 
     setSubject(replacePlaceholders(sub));

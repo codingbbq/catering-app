@@ -88,3 +88,18 @@ Centralize communication history related to enquiries, quotations, and bookings,
 
 - sophisticated inbox synchronization
 - AI-generated reply suggestions
+
+## Implementation Status
+
+- **Status**: Completed
+- **Delivered Capabilities**:
+  - `CommunicationLog` and `CommunicationTemplate` models with tenant isolation and relations to `Customer`, `Enquiry`, `Quotation`, and `Booking`.
+  - Provider abstraction interface (`CommunicationProvider`) with mock provider implementation simulating delivery and failure modes.
+  - Multi-channel support (`email`, `sms`, `whatsapp`, `internal_note`) and lifecycle statuses (`draft`, `pending`, `sent`, `delivered`, `failed`).
+  - Delivery failure tracking and retry mechanism (`POST /communications/:id/retry`).
+  - Pre-seeded system message templates with dynamic variable interpolation (`{{customer_name}}`, `{{quotation_number}}`, `{{booking_number}}`, `{{amount}}`, `{{currency}}`, `{{event_date}}`, `{{venue}}`).
+  - Dedicated Communication Hub dashboard at `/tenant/[tenantSlug]/communications` with KPI metric counters, channel tabs, multi-attribute filtering, and composer modal.
+  - Detail modal with delivery tracking, provider reference IDs, and error diagnostics.
+  - Embedded `EntityCommunicationsTimeline` integrated into Enquiry, Quotation, and Booking detail pages.
+  - Automatic communication logging when quotations are sent or bookings are confirmed.
+  - Strict Executive Monochrome design standard and dynamic tenant currency formatting.

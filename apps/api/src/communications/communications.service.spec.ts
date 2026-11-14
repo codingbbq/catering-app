@@ -5,6 +5,7 @@ import { CommunicationsService } from './communications.service.js';
 describe('CommunicationsService', () => {
   let service: CommunicationsService;
   let mockPrisma: any;
+  let mockAuditLogService: any;
 
   const tenantId = '00000000-0000-0000-0000-000000000001';
   const userId = '11111111-1111-1111-1111-111111111111';
@@ -37,12 +38,13 @@ describe('CommunicationsService', () => {
       enquiryActivity: {
         create: vi.fn(),
       },
-      auditLog: {
-        create: vi.fn(),
-      },
     };
 
-    service = new CommunicationsService(mockPrisma);
+    mockAuditLogService = {
+      record: vi.fn(),
+    };
+
+    service = new CommunicationsService(mockPrisma, mockAuditLogService);
   });
 
   describe('listCommunications', () => {
@@ -84,7 +86,7 @@ describe('CommunicationsService', () => {
       const result = await service.listCommunications(tenantId, { channel: 'email', status: 'delivered' });
 
       expect(result.items).toHaveLength(1);
-      expect(result.items[0].recipient).toBe('acme@test.com');
+      expect(result.items[0]?.recipient).toBe('acme@test.com');
       expect(result.total).toBe(1);
       expect(result.stats.delivered).toBe(1);
       expect(mockPrisma.communicationLog.findMany).toHaveBeenCalledWith(
@@ -170,6 +172,11 @@ describe('CommunicationsService', () => {
           }),
         }),
       );
+      expect(mockAuditLogService.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'communication.created',
+        }),
+      );
     });
 
     it('should mark message as draft without provider dispatch if isDraft is true', async () => {
@@ -250,6 +257,11 @@ describe('CommunicationsService', () => {
           data: expect.objectContaining({
             retryCount: { increment: 1 },
           }),
+        }),
+      );
+      expect(mockAuditLogService.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'communication.retried',
         }),
       );
     });

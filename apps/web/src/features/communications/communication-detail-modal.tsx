@@ -13,7 +13,7 @@ interface CommunicationDetailModalProps {
   item: CommunicationItem | null;
   tenantSlug: string;
   onClose: () => void;
-  onUpdated?: () => void;
+  onUpdated?: (() => void) | undefined;
 }
 
 export function CommunicationDetailModal({

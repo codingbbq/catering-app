@@ -14,15 +14,15 @@ interface EntityCommunicationsTimelineProps {
   tenantSlug: string;
   entityType: "enquiry" | "quotation" | "booking" | "customer";
   entityId: string;
-  entityLabel?: string;
-  customerName?: string;
-  recipientEmail?: string;
-  recipientPhone?: string;
-  quotationNumber?: string;
-  bookingNumber?: string;
-  eventDate?: string;
-  venue?: string;
-  amount?: number;
+  entityLabel?: string | undefined;
+  customerName?: string | undefined;
+  recipientEmail?: string | undefined;
+  recipientPhone?: string | undefined;
+  quotationNumber?: string | undefined;
+  bookingNumber?: string | undefined;
+  eventDate?: string | undefined;
+  venue?: string | undefined;
+  amount?: number | undefined;
 }
 
 export function EntityCommunicationsTimeline({

@@ -5,7 +5,7 @@ import {
   forgotPasswordRequestSchema,
   resetPasswordRequestSchema,
 } from '@catering/shared-types';
-import { Body, Controller, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { AuthService } from './auth.service.js';
 
 @Controller('platform/auth')
@@ -29,6 +29,11 @@ export class PlatformAuthController {
 @Controller('auth')
 export class TenantAuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @Get('tenant-info/:tenantSlug')
+  async getTenantInfo(@Param('tenantSlug') tenantSlug: string) {
+    return this.authService.getTenantInfo(tenantSlug);
+  }
 
   @Post('sign-in/:tenantSlug')
   async signIn(@Param('tenantSlug') tenantSlug: string, @Body() body: unknown) {
