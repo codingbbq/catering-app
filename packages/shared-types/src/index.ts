@@ -2774,4 +2774,655 @@ export function calculateValuation(currentStock: number, unitCost: number): numb
   return Math.round(stock * cost * 100) / 100;
 }
 
+// --- RPT-001: Reporting and Dashboards ---
+
+export const reportPeriodSchema = z.enum([
+  "7d",
+  "30d",
+  "90d",
+  "this_month",
+  "this_quarter",
+  "this_year",
+  "all_time",
+  "custom",
+]);
+export type ReportPeriod = z.infer<typeof reportPeriodSchema>;
+
+export const reportFilterQuerySchema = z.object({
+  period: reportPeriodSchema.optional().default("30d"),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+});
+export type ReportFilterQuery = z.infer<typeof reportFilterQuerySchema>;
+
+export const salesSummaryReportSchema = z.object({
+  period: z.string(),
+  startDate: z.string().nullable().optional(),
+  endDate: z.string().nullable().optional(),
+  enquiries: z.object({
+    total: z.number().int().nonnegative(),
+    byStatus: z.record(z.string(), z.number().int().nonnegative()),
+    qualificationRate: z.number().nonnegative(),
+    winRate: z.number().nonnegative(),
+  }),
+  quotations: z.object({
+    total: z.number().int().nonnegative(),
+    totalQuotedValue: z.number().nonnegative(),
+    averageQuoteValue: z.number().nonnegative(),
+    acceptedCount: z.number().int().nonnegative(),
+    acceptedValue: z.number().nonnegative(),
+    acceptanceRate: z.number().nonnegative(),
+    byStatus: z.record(z.string(), z.number().int().nonnegative()),
+  }),
+  topQuotations: z.array(
+    z.object({
+      id: z.string().uuid(),
+      quotationNumber: z.string(),
+      title: z.string(),
+      customerName: z.string(),
+      status: z.string(),
+      totalAmount: z.number().nonnegative(),
+      createdAt: z.string(),
+    }),
+  ),
+});
+export type SalesSummaryReport = z.infer<typeof salesSummaryReportSchema>;
+
+export const bookingSummaryReportSchema = z.object({
+  period: z.string(),
+  startDate: z.string().nullable().optional(),
+  endDate: z.string().nullable().optional(),
+  totalBookings: z.number().int().nonnegative(),
+  totalConfirmedRevenue: z.number().nonnegative(),
+  averageBookingValue: z.number().nonnegative(),
+  totalGuests: z.number().int().nonnegative(),
+  averageGuests: z.number().nonnegative(),
+  upcomingCount: z.number().int().nonnegative(),
+  completedCount: z.number().int().nonnegative(),
+  cancelledCount: z.number().int().nonnegative(),
+  byStatus: z.record(z.string(), z.number().int().nonnegative()),
+  recentBookings: z.array(
+    z.object({
+      id: z.string().uuid(),
+      bookingNumber: z.string(),
+      title: z.string(),
+      customerName: z.string(),
+      eventDate: z.string(),
+      guestCount: z.number().int().nullable().optional(),
+      status: z.string(),
+      totalAmount: z.number().nonnegative(),
+    }),
+  ),
+});
+export type BookingSummaryReport = z.infer<typeof bookingSummaryReportSchema>;
+
+export const financeSummaryReportSchema = z.object({
+  period: z.string(),
+  startDate: z.string().nullable().optional(),
+  endDate: z.string().nullable().optional(),
+  totalInvoiced: z.number().nonnegative(),
+  totalPaid: z.number().nonnegative(),
+  totalOutstanding: z.number().nonnegative(),
+  totalOverdue: z.number().nonnegative(),
+  overdueCount: z.number().int().nonnegative(),
+  collectionRate: z.number().nonnegative(),
+  invoicesByStatus: z.record(z.string(), z.number().int().nonnegative()),
+  totalPaymentsReceipts: z.number().nonnegative(),
+  unallocatedCredits: z.number().nonnegative(),
+  paymentMethods: z.record(z.string(), z.number().nonnegative()),
+});
+export type FinanceSummaryReport = z.infer<typeof financeSummaryReportSchema>;
+
+export const operationsSummaryReportSchema = z.object({
+  period: z.string(),
+  startDate: z.string().nullable().optional(),
+  endDate: z.string().nullable().optional(),
+  mealOrders: z.object({
+    totalOrders: z.number().int().nonnegative(),
+    totalQuantity: z.number().nonnegative(),
+    totalValue: z.number().nonnegative(),
+    activePlansCount: z.number().int().nonnegative(),
+    byStatus: z.record(z.string(), z.number().int().nonnegative()),
+    bySlot: z.record(z.string(), z.number().int().nonnegative()),
+  }),
+  inventory: z.object({
+    totalItems: z.number().int().nonnegative(),
+    totalStockValuation: z.number().nonnegative(),
+    lowStockCount: z.number().int().nonnegative(),
+    outOfStockCount: z.number().int().nonnegative(),
+    byCategory: z.array(
+      z.object({
+        category: z.string(),
+        itemCount: z.number().int().nonnegative(),
+        valuation: z.number().nonnegative(),
+      }),
+    ),
+  }),
+});
+export type OperationsSummaryReport = z.infer<typeof operationsSummaryReportSchema>;
+
+export const dashboardOverviewReportSchema = z.object({
+  period: z.string(),
+  kpi: z.object({
+    activeBookingsValue: z.number().nonnegative(),
+    confirmedBookingsCount: z.number().int().nonnegative(),
+    upcomingBookingsCount: z.number().int().nonnegative(),
+    pipelineQuotedValue: z.number().nonnegative(),
+    pendingQuotesCount: z.number().int().nonnegative(),
+    totalRevenueCollected: z.number().nonnegative(),
+    outstandingInvoiced: z.number().nonnegative(),
+    overdueInvoicesCount: z.number().int().nonnegative(),
+    lowStockAlertsCount: z.number().int().nonnegative(),
+    mealOrdersScheduledCount: z.number().int().nonnegative(),
+  }),
+  recentAlerts: z.array(
+    z.object({
+      id: z.string(),
+      type: z.enum(["quote_pending", "booking_upcoming", "invoice_overdue", "stock_low"]),
+      title: z.string(),
+      description: z.string(),
+      severity: z.enum(["info", "warning", "error"]),
+      link: z.string(),
+    }),
+  ),
+});
+export type DashboardOverviewReport = z.infer<typeof dashboardOverviewReportSchema>;
+
+export const platformTenantSummaryReportSchema = z.object({
+  totalTenants: z.number().int().nonnegative(),
+  tenantsByStatus: z.record(z.string(), z.number().int().nonnegative()),
+  totalPlatformUsers: z.number().int().nonnegative(),
+  totalTenantUsers: z.number().int().nonnegative(),
+  totalBookingsCount: z.number().int().nonnegative(),
+  totalInvoicesCount: z.number().int().nonnegative(),
+  totalCatalogueItemsCount: z.number().int().nonnegative(),
+  tenantActivity: z.array(
+    z.object({
+      tenantId: z.string().uuid(),
+      name: z.string(),
+      slug: z.string(),
+      status: z.string(),
+      userCount: z.number().int().nonnegative(),
+      bookingCount: z.number().int().nonnegative(),
+      invoiceCount: z.number().int().nonnegative(),
+      createdAt: z.string(),
+    }),
+  ),
+});
+export type PlatformTenantSummaryReport = z.infer<typeof platformTenantSummaryReportSchema>;
+
+// --- OPS-003: Kitchen Operations ---
+
+export const kitchenPlanStatusSchema = z.enum([
+  "draft",
+  "scheduled",
+  "in_progress",
+  "completed",
+  "cancelled",
+]);
+export type KitchenPlanStatus = z.infer<typeof kitchenPlanStatusSchema>;
+
+export const kitchenPlanSourceSchema = z.enum(["booking", "daily_meal_order", "manual"]);
+export type KitchenPlanSource = z.infer<typeof kitchenPlanSourceSchema>;
+
+export const kitchenStationSchema = z.enum([
+  "prep",
+  "hot_kitchen",
+  "cold_kitchen",
+  "bakery_pastry",
+  "assembly_packing",
+  "beverages",
+  "other",
+]);
+export type KitchenStation = z.infer<typeof kitchenStationSchema>;
+
+export const kitchenTaskStatusSchema = z.enum(["pending", "in_progress", "completed", "blocked"]);
+export type KitchenTaskStatus = z.infer<typeof kitchenTaskStatusSchema>;
+
+export const kitchenTaskSchema = z.object({
+  id: z.string().uuid(),
+  tenantId: tenantIdSchema,
+  planId: z.string().uuid(),
+  taskNumber: z.string(),
+  title: z.string(),
+  station: kitchenStationSchema,
+  status: kitchenTaskStatusSchema,
+  targetQuantity: z.number().nullable().optional(),
+  unit: z.string().nullable().optional(),
+  dueTime: z.string().nullable().optional(),
+  assignedTo: z.string().nullable().optional(),
+  dietaryAlerts: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  sortOrder: z.number().int().default(0),
+  completedAt: z.string().nullable().optional(),
+  completedBy: z.string().nullable().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type KitchenTask = z.infer<typeof kitchenTaskSchema>;
+
+export const kitchenProductionPlanSchema = z.object({
+  id: z.string().uuid(),
+  tenantId: tenantIdSchema,
+  planNumber: z.string(),
+  title: z.string(),
+  status: kitchenPlanStatusSchema,
+  source: kitchenPlanSourceSchema,
+  planDate: z.string(),
+  serviceSlot: z.string().nullable().optional(),
+  estimatedServings: z.number().int().nonnegative(),
+  bookingId: z.string().uuid().nullable().optional(),
+  dailyMealOrderId: z.string().uuid().nullable().optional(),
+  venueNotes: z.string().nullable().optional(),
+  dietaryNotes: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  tasks: z.array(kitchenTaskSchema).default([]),
+  booking: z
+    .object({
+      id: z.string().uuid(),
+      bookingNumber: z.string(),
+      title: z.string(),
+      guestCount: z.number().nullable().optional(),
+      customer: z
+        .object({
+          id: z.string().uuid(),
+          name: z.string(),
+        })
+        .optional(),
+    })
+    .nullable()
+    .optional(),
+  dailyMealOrder: z
+    .object({
+      id: z.string().uuid(),
+      orderNumber: z.string(),
+      serviceDate: z.string(),
+      serviceSlot: z.string(),
+      customer: z
+        .object({
+          id: z.string().uuid(),
+          name: z.string(),
+        })
+        .optional(),
+    })
+    .nullable()
+    .optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type KitchenProductionPlan = z.infer<typeof kitchenProductionPlanSchema>;
+
+export const kitchenSummarySchema = z.object({
+  date: z.string(),
+  totalPlans: z.number().int().nonnegative(),
+  scheduledPlans: z.number().int().nonnegative(),
+  inProgressPlans: z.number().int().nonnegative(),
+  completedPlans: z.number().int().nonnegative(),
+  totalTasks: z.number().int().nonnegative(),
+  completedTasks: z.number().int().nonnegative(),
+  pendingTasks: z.number().int().nonnegative(),
+  totalServings: z.number().int().nonnegative(),
+  stationWorkload: z.record(z.string(), z.number().int().nonnegative()),
+});
+export type KitchenSummary = z.infer<typeof kitchenSummarySchema>;
+
+export const kitchenPlansQuerySchema = z.object({
+  date: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  status: kitchenPlanStatusSchema.optional(),
+  source: kitchenPlanSourceSchema.optional(),
+  station: kitchenStationSchema.optional(),
+  search: z.string().optional(),
+  page: z.number().int().positive().optional().default(1),
+  limit: z.number().int().positive().max(100).optional().default(50),
+});
+export type KitchenPlansQuery = z.infer<typeof kitchenPlansQuerySchema>;
+
+export const createKitchenTaskItemSchema = z.object({
+  title: z.string().min(1, "Task title is required").max(200),
+  station: kitchenStationSchema.default("prep"),
+  targetQuantity: z.number().nonnegative().optional().nullable(),
+  unit: z.string().max(20).optional().nullable(),
+  dueTime: z.string().max(50).optional().nullable(),
+  assignedTo: z.string().max(100).optional().nullable(),
+  dietaryAlerts: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  sortOrder: z.number().int().optional(),
+});
+export type CreateKitchenTaskItem = z.infer<typeof createKitchenTaskItemSchema>;
+
+export const createKitchenPlanRequestSchema = z.object({
+  title: z.string().min(1, "Plan title is required").max(200),
+  planDate: z.string().min(1, "Plan date is required"),
+  serviceSlot: z.string().optional().nullable(),
+  estimatedServings: z.number().int().positive().default(1),
+  source: kitchenPlanSourceSchema.default("manual"),
+  bookingId: z.string().uuid().optional().nullable(),
+  dailyMealOrderId: z.string().uuid().optional().nullable(),
+  venueNotes: z.string().optional().nullable(),
+  dietaryNotes: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  tasks: z.array(createKitchenTaskItemSchema).optional().default([]),
+});
+export type CreateKitchenPlanRequest = z.infer<typeof createKitchenPlanRequestSchema>;
+
+export const updateKitchenPlanRequestSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  status: kitchenPlanStatusSchema.optional(),
+  planDate: z.string().optional(),
+  serviceSlot: z.string().optional().nullable(),
+  estimatedServings: z.number().int().positive().optional(),
+  venueNotes: z.string().optional().nullable(),
+  dietaryNotes: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+});
+export type UpdateKitchenPlanRequest = z.infer<typeof updateKitchenPlanRequestSchema>;
+
+export const updateKitchenTaskRequestSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  station: kitchenStationSchema.optional(),
+  status: kitchenTaskStatusSchema.optional(),
+  targetQuantity: z.number().nonnegative().optional().nullable(),
+  unit: z.string().max(20).optional().nullable(),
+  dueTime: z.string().max(50).optional().nullable(),
+  assignedTo: z.string().max(100).optional().nullable(),
+  dietaryAlerts: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  sortOrder: z.number().int().optional(),
+  completedBy: z.string().optional().nullable(),
+});
+export type UpdateKitchenTaskRequest = z.infer<typeof updateKitchenTaskRequestSchema>;
+
+export const recordKitchenConsumptionRequestSchema = z.object({
+  inventoryItemId: z.string().uuid("Inventory item ID is required"),
+  quantity: z.number().positive("Quantity must be greater than zero"),
+  notes: z.string().optional().nullable(),
+});
+export type RecordKitchenConsumptionRequest = z.infer<typeof recordKitchenConsumptionRequestSchema>;
+
+export function calculateKitchenPlanProgress(tasks: Array<{ status: KitchenTaskStatus }>): {
+  total: number;
+  completed: number;
+  pending: number;
+  inProgress: number;
+  blocked: number;
+  percent: number;
+} {
+  const total = tasks.length;
+  if (total === 0) {
+    return { total: 0, completed: 0, pending: 0, inProgress: 0, blocked: 0, percent: 0 };
+  }
+  const completed = tasks.filter((t) => t.status === "completed").length;
+  const inProgress = tasks.filter((t) => t.status === "in_progress").length;
+  const blocked = tasks.filter((t) => t.status === "blocked").length;
+  const pending = tasks.filter((t) => t.status === "pending").length;
+  const percent = Math.round((completed / total) * 100);
+  return { total, completed, pending, inProgress, blocked, percent };
+}
+
+// ============================================================================
+// OPS-002: Procurement and Suppliers
+// ============================================================================
+
+export const supplierPaymentTermsSchema = z.enum([
+  "due_on_receipt",
+  "net_15",
+  "net_30",
+  "net_45",
+  "net_60",
+]);
+export type SupplierPaymentTerms = z.infer<typeof supplierPaymentTermsSchema>;
+
+export const purchaseOrderStatusSchema = z.enum([
+  "draft",
+  "ordered",
+  "partially_received",
+  "received",
+  "cancelled",
+]);
+export type PurchaseOrderStatus = z.infer<typeof purchaseOrderStatusSchema>;
+
+export const supplierSchema = z.object({
+  id: z.string().uuid(),
+  tenantId: tenantIdSchema,
+  code: z.string(),
+  name: z.string(),
+  contactName: z.string().nullable().optional(),
+  email: z.string().nullable().optional(),
+  phone: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
+  taxId: z.string().nullable().optional(),
+  paymentTerms: supplierPaymentTermsSchema,
+  notes: z.string().nullable().optional(),
+  isArchived: z.boolean(),
+  purchaseOrdersCount: z.number().int().optional().default(0),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type Supplier = z.infer<typeof supplierSchema>;
+
+export const createSupplierRequestSchema = z.object({
+  code: z.string().min(1, "Supplier code is required").max(50),
+  name: z.string().min(1, "Supplier name is required").max(200),
+  contactName: z.string().max(100).optional().nullable(),
+  email: z.string().email("Invalid email address").optional().nullable().or(z.literal("")),
+  phone: z.string().max(50).optional().nullable(),
+  address: z.string().max(500).optional().nullable(),
+  taxId: z.string().max(50).optional().nullable(),
+  paymentTerms: supplierPaymentTermsSchema.optional().default("net_30"),
+  notes: z.string().optional().nullable(),
+});
+export type CreateSupplierRequest = z.input<typeof createSupplierRequestSchema>;
+
+export const updateSupplierRequestSchema = z.object({
+  code: z.string().min(1).max(50).optional(),
+  name: z.string().min(1).max(200).optional(),
+  contactName: z.string().max(100).optional().nullable(),
+  email: z.string().email("Invalid email address").optional().nullable().or(z.literal("")),
+  phone: z.string().max(50).optional().nullable(),
+  address: z.string().max(500).optional().nullable(),
+  taxId: z.string().max(50).optional().nullable(),
+  paymentTerms: supplierPaymentTermsSchema.optional(),
+  notes: z.string().optional().nullable(),
+  isArchived: z.boolean().optional(),
+});
+export type UpdateSupplierRequest = z.infer<typeof updateSupplierRequestSchema>;
+
+export const supplierQuerySchema = z.object({
+  search: z.string().optional(),
+  includeArchived: z.boolean().optional().default(false),
+  page: z.number().int().positive().optional().default(1),
+  limit: z.number().int().positive().max(100).optional().default(50),
+});
+export type SupplierQuery = z.infer<typeof supplierQuerySchema>;
+
+export const purchaseOrderLineSchema = z.object({
+  id: z.string().uuid(),
+  purchaseOrderId: z.string().uuid(),
+  inventoryItemId: z.string().uuid().nullable().optional(),
+  inventoryItem: z
+    .object({
+      id: z.string().uuid(),
+      sku: z.string(),
+      name: z.string(),
+      unit: z.string(),
+    })
+    .nullable()
+    .optional(),
+  name: z.string(),
+  description: z.string().nullable().optional(),
+  quantityOrdered: z.number(),
+  quantityReceived: z.number(),
+  unit: z.string(),
+  unitPrice: z.number(),
+  totalAmount: z.number(),
+  sortOrder: z.number().int().default(0),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type PurchaseOrderLine = z.infer<typeof purchaseOrderLineSchema>;
+
+export const purchaseOrderSchema = z.object({
+  id: z.string().uuid(),
+  tenantId: tenantIdSchema,
+  poNumber: z.string(),
+  supplierId: z.string().uuid(),
+  supplier: z
+    .object({
+      id: z.string().uuid(),
+      code: z.string(),
+      name: z.string(),
+      contactName: z.string().nullable().optional(),
+      email: z.string().nullable().optional(),
+      phone: z.string().nullable().optional(),
+      paymentTerms: supplierPaymentTermsSchema.optional(),
+    })
+    .optional(),
+  status: purchaseOrderStatusSchema,
+  orderDate: z.string(),
+  expectedDeliveryDate: z.string().nullable().optional(),
+  deliveryAddress: z.string().nullable().optional(),
+  currency: z.string().default("INR"),
+  subtotal: z.number(),
+  taxRate: z.number(),
+  taxAmount: z.number(),
+  totalAmount: z.number(),
+  notes: z.string().nullable().optional(),
+  internalNotes: z.string().nullable().optional(),
+  lines: z.array(purchaseOrderLineSchema).default([]),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type PurchaseOrder = z.infer<typeof purchaseOrderSchema>;
+
+export const createPurchaseOrderLineItemSchema = z.object({
+  inventoryItemId: z.string().uuid().optional().nullable(),
+  name: z.string().min(1, "Item name is required").max(200),
+  description: z.string().optional().nullable(),
+  quantityOrdered: z.number().positive("Quantity must be greater than zero"),
+  unit: z.string().min(1, "Unit of measure is required").max(20).default("kg"),
+  unitPrice: z.number().nonnegative("Unit price must be non-negative").default(0),
+  sortOrder: z.number().int().optional().default(0),
+});
+export type CreatePurchaseOrderLineItem = z.input<typeof createPurchaseOrderLineItemSchema>;
+
+export const createPurchaseOrderRequestSchema = z.object({
+  supplierId: z.string().uuid("Supplier is required"),
+  orderDate: z.string().optional(),
+  expectedDeliveryDate: z.string().optional().nullable(),
+  deliveryAddress: z.string().optional().nullable(),
+  taxRate: z.number().nonnegative().optional().default(0),
+  notes: z.string().optional().nullable(),
+  internalNotes: z.string().optional().nullable(),
+  lines: z.array(createPurchaseOrderLineItemSchema).min(1, "At least one item line is required"),
+});
+export type CreatePurchaseOrderRequest = z.input<typeof createPurchaseOrderRequestSchema>;
+
+export const updatePurchaseOrderRequestSchema = z.object({
+  supplierId: z.string().uuid().optional(),
+  orderDate: z.string().optional(),
+  expectedDeliveryDate: z.string().optional().nullable(),
+  deliveryAddress: z.string().optional().nullable(),
+  taxRate: z.number().nonnegative().optional(),
+  notes: z.string().optional().nullable(),
+  internalNotes: z.string().optional().nullable(),
+  lines: z.array(createPurchaseOrderLineItemSchema).optional(),
+});
+export type UpdatePurchaseOrderRequest = z.infer<typeof updatePurchaseOrderRequestSchema>;
+
+export const receiveItemLineRequestSchema = z.object({
+  lineId: z.string().uuid("Line ID is required"),
+  quantityReceived: z.number().positive("Quantity received must be greater than zero"),
+});
+export type ReceiveItemLineRequest = z.infer<typeof receiveItemLineRequestSchema>;
+
+export const receivePurchaseOrderItemsRequestSchema = z.object({
+  items: z.array(receiveItemLineRequestSchema).min(1, "At least one item receipt is required"),
+  notes: z.string().optional().nullable(),
+});
+export type ReceivePurchaseOrderItemsRequest = z.infer<typeof receivePurchaseOrderItemsRequestSchema>;
+
+export const purchaseOrdersQuerySchema = z.object({
+  supplierId: z.string().uuid().optional(),
+  status: purchaseOrderStatusSchema.optional(),
+  search: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  page: z.number().int().positive().optional().default(1),
+  limit: z.number().int().positive().max(100).optional().default(50),
+});
+export type PurchaseOrdersQuery = z.infer<typeof purchaseOrdersQuerySchema>;
+
+export const procurementSummarySchema = z.object({
+  totalOrders: z.number().int().nonnegative(),
+  draftOrders: z.number().int().nonnegative(),
+  orderedCount: z.number().int().nonnegative(),
+  partiallyReceivedCount: z.number().int().nonnegative(),
+  receivedCount: z.number().int().nonnegative(),
+  totalSpend: z.number().nonnegative(),
+  activeSuppliersCount: z.number().int().nonnegative(),
+  currency: z.string(),
+});
+export type ProcurementSummary = z.infer<typeof procurementSummarySchema>;
+
+// Deterministic Procurement Helper Functions
+export function calculatePurchaseOrderTotals(
+  lines: Array<{ quantityOrdered: number; unitPrice: number }>,
+  taxRate = 0,
+): {
+  subtotal: number;
+  taxAmount: number;
+  totalAmount: number;
+} {
+  const subtotal = lines.reduce((acc, line) => {
+    const qty = Math.max(0, line.quantityOrdered || 0);
+    const price = Math.max(0, line.unitPrice || 0);
+    return acc + Math.round(qty * price * 100) / 100;
+  }, 0);
+
+  const roundedSubtotal = Math.round(subtotal * 100) / 100;
+  const rate = Math.max(0, taxRate || 0);
+  const taxAmount = Math.round(((roundedSubtotal * rate) / 100) * 100) / 100;
+  const totalAmount = Math.round((roundedSubtotal + taxAmount) * 100) / 100;
+
+  return {
+    subtotal: roundedSubtotal,
+    taxAmount,
+    totalAmount,
+  };
+}
+
+export function determinePurchaseOrderStatus(
+  lines: Array<{ quantityOrdered: number; quantityReceived: number }>,
+  currentStatus: PurchaseOrderStatus,
+): PurchaseOrderStatus {
+  if (currentStatus === "cancelled" || currentStatus === "draft") {
+    return currentStatus;
+  }
+
+  if (lines.length === 0) {
+    return currentStatus;
+  }
+
+  const allFullyReceived = lines.every(
+    (line) => (line.quantityReceived || 0) >= (line.quantityOrdered || 0) - 0.0001,
+  );
+
+  if (allFullyReceived) {
+    return "received";
+  }
+
+  const someReceived = lines.some((line) => (line.quantityReceived || 0) > 0.0001);
+
+  if (someReceived) {
+    return "partially_received";
+  }
+
+  return "ordered";
+}
+
+
+
+
 

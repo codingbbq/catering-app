@@ -13,14 +13,14 @@
 | CST-001 | Costing Engine | Critical | CAT-001, MEN-001 | COMPLETED | [CST-001](./09-CST-001-costing-engine.md) |
 | QTN-001 | Quotations and Revisions | Critical | CRM-002, MEN-001, CST-001 | COMPLETED | [QTN-001](./10-QTN-001-quotations-and-revisions.md) |
 | BKG-001 | Booking Management | Critical | QTN-001 | COMPLETED | [BKG-001](./11-BKG-001-booking-management.md) |
-| COM-001 | Communication Hub | High | CRM-002, QTN-001, BKG-001 | NOT_STARTED | [COM-001](./12-COM-001-communication-hub.md) |
-| FIN-001 | Invoicing | Medium | BKG-001, DMO-001 | NOT_STARTED | [FIN-001](./13-FIN-001-invoicing.md) |
-| FIN-002 | Payments | Medium | FIN-001 | NOT_STARTED | [FIN-002](./14-FIN-002-payments.md) |
-| DMO-001 | Daily Meal Orders | Medium | CRM-001, MEN-001, CST-001 | NOT_STARTED | [DMO-001](./15-DMO-001-daily-meal-orders.md) |
-| OPS-001 | Inventory Management | Medium | CST-001 | NOT_STARTED | [OPS-001](./16-OPS-001-inventory-management.md) |
-| OPS-002 | Procurement and Suppliers | Low | OPS-001 | NOT_STARTED | [OPS-002](./17-OPS-002-procurement-and-suppliers.md) |
-| OPS-003 | Kitchen Operations | Low | BKG-001, DMO-001, OPS-001 | NOT_STARTED | [OPS-003](./18-OPS-003-kitchen-operations.md) |
-| RPT-001 | Reporting and Dashboards | Low | CRM-002, QTN-001, BKG-001, FIN-002 | NOT_STARTED | [RPT-001](./19-RPT-001-reporting-and-dashboards.md) |
+| COM-001 | Communication Hub | High | CRM-002, QTN-001, BKG-001 | COMPLETED | [COM-001](./12-COM-001-communication-hub.md) |
+| FIN-001 | Invoicing | Medium | BKG-001, DMO-001 | COMPLETED | [FIN-001](./13-FIN-001-invoicing.md) |
+| FIN-002 | Payments | Medium | FIN-001 | COMPLETED | [FIN-002](./14-FIN-002-payments.md) |
+| DMO-001 | Daily Meal Orders | Medium | CRM-001, MEN-001, CST-001 | COMPLETED | [DMO-001](./15-DMO-001-daily-meal-orders.md) |
+| OPS-001 | Inventory Management | Medium | CST-001 | COMPLETED | [OPS-001](./16-OPS-001-inventory-management.md) |
+| OPS-002 | Procurement and Suppliers | Low | OPS-001 | COMPLETED | [OPS-002](./17-OPS-002-procurement-and-suppliers.md) |
+| OPS-003 | Kitchen Operations | Low | BKG-001, DMO-001, OPS-001 | COMPLETED | [OPS-003](./18-OPS-003-kitchen-operations.md) |
+| RPT-001 | Reporting and Dashboards | Low | CRM-002, QTN-001, BKG-001, FIN-002 | COMPLETED | [RPT-001](./19-RPT-001-reporting-and-dashboards.md) |
 
 ## Notes
 

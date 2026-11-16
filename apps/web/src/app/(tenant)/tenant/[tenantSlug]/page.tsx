@@ -8,7 +8,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { BookingStatusBadge } from "@/features/bookings/booking-status-badge";
 import { useTenantCurrency } from "@/features/tenancy/tenant-provider";
 import { listBookings } from "@/lib/bookings-api";
-import { listQuotations } from "@/lib/quotations-api";
+import { getDashboardOverview } from "@/lib/reports-api";
 import { getTenantProfile } from "@/lib/tenant-admin-api";
 import { useAuth } from "@/providers/auth-provider";
 
@@ -23,15 +23,15 @@ export default function TenantDashboardPage() {
     enabled: isAuthenticated && isTenant && !!accessToken,
   });
 
-  const { data: bookingsData, isLoading: isLoadingBookings } = useQuery({
-    queryKey: ["tenant", tenantSlug, "bookings", "dashboard"],
-    queryFn: () => listBookings(accessToken!, { limit: 5 }),
+  const { data: overviewData } = useQuery({
+    queryKey: ["tenant", tenantSlug, "dashboard-overview"],
+    queryFn: () => getDashboardOverview(accessToken!),
     enabled: isAuthenticated && isTenant && !!accessToken,
   });
 
-  const { data: quotationsData } = useQuery({
-    queryKey: ["tenant", tenantSlug, "quotations", "dashboard"],
-    queryFn: () => listQuotations(accessToken!),
+  const { data: bookingsData, isLoading: isLoadingBookings } = useQuery({
+    queryKey: ["tenant", tenantSlug, "bookings", "dashboard"],
+    queryFn: () => listBookings(accessToken!, { limit: 5 }),
     enabled: isAuthenticated && isTenant && !!accessToken,
   });
 
@@ -58,6 +58,19 @@ export default function TenantDashboardPage() {
     );
   }
 
+  const kpis = overviewData?.kpi ?? {
+    activeBookingsValue: 0,
+    confirmedBookingsCount: 0,
+    upcomingBookingsCount: 0,
+    pipelineQuotedValue: 0,
+    pendingQuotesCount: 0,
+    totalRevenueCollected: 0,
+    outstandingInvoiced: 0,
+    overdueInvoicesCount: 0,
+    lowStockAlertsCount: 0,
+    mealOrdersScheduledCount: 0,
+  };
+
   const bookingStats = bookingsData?.stats ?? {
     totalBookings: 0,
     confirmedCount: 0,
@@ -73,17 +86,28 @@ export default function TenantDashboardPage() {
     (b) => b.status === "confirmed" || b.status === "in_progress" || b.status === "draft",
   );
 
+  const alerts = overviewData?.recentAlerts ?? [];
+
   return (
     <div className="space-y-8">
       <PageHeader
         title={profile?.displayName ?? tenantSlug}
-        description="Daily catering operations, client accounts, menus, and event management."
+        description="Daily catering operations, client accounts, live financial tracking, and event fulfillment."
         badge={<StatusBadge variant="success">Workspace Active</StatusBadge>}
         actions={
           <div className="flex items-center gap-2 flex-wrap">
             <Link
+              href={`/tenant/${tenantSlug}/reports`}
+              className="inline-flex items-center gap-1.5 rounded border border-[#171717] bg-[#171717] px-3.5 py-1.5 text-xs font-medium text-white hover:bg-[#262626] transition-colors shadow-xs"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              <span>Executive Reports</span>
+            </Link>
+            <Link
               href={`/tenant/${tenantSlug}/bookings/new`}
-              className="inline-flex items-center gap-1.5 rounded bg-[#171717] px-3.5 py-1.5 text-xs font-medium text-white hover:bg-[#262626] transition-colors shadow-xs"
+              className="inline-flex items-center gap-1.5 rounded border border-[#E5E5E5] bg-white px-3.5 py-1.5 text-xs font-medium text-[#171717] hover:bg-[#FAFAFA] transition-colors"
             >
               <span className="text-sm leading-none">+</span>
               <span>New Booking</span>
@@ -95,47 +119,133 @@ export default function TenantDashboardPage() {
               <span className="text-sm leading-none">+</span>
               <span>New Quotation</span>
             </Link>
-            <Link
-              href={`/tenant/${tenantSlug}/enquiries/new`}
-              className="inline-flex items-center gap-1.5 rounded border border-[#E5E5E5] bg-white px-3.5 py-1.5 text-xs font-medium text-[#737373] hover:text-[#171717] hover:bg-[#FAFAFA] transition-colors"
-            >
-              <span className="text-sm leading-none">+</span>
-              <span>New Enquiry</span>
-            </Link>
           </div>
         }
       />
 
-      {/* Operational Overview Cards */}
+      {/* Primary KPI Overview Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Active Bookings Revenue */}
         <div className="rounded-lg border border-[#E5E5E5] bg-white p-4 space-y-1 shadow-xs">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-[#737373]">Workspace</p>
-          <p className="text-lg font-bold text-[#171717]">{tenantSlug}</p>
-          <p className="text-[11px] text-[#737373]">Tenant isolation active</p>
-        </div>
-
-        <div className="rounded-lg border border-[#E5E5E5] bg-white p-4 space-y-1 shadow-xs">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-[#737373]">Currency &amp; Timezone</p>
-          <p className="text-lg font-bold text-[#171717]">{currencyCode} ({currencySymbol})</p>
-          <p className="text-[11px] text-[#737373]">{profile?.settings?.timezone ?? "UTC"}</p>
-        </div>
-
-        <div className="rounded-lg border border-[#E5E5E5] bg-white p-4 space-y-1 shadow-xs">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-[#737373]">Active Bookings Value</p>
-          <p className="text-lg font-bold text-emerald-700">
-            {formatCurrency(bookingStats.totalConfirmedValue)}
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#737373]">
+              Active Bookings Value
+            </p>
+            <span className="text-[10px] font-mono text-[#737373]">{kpis.confirmedBookingsCount} Events</span>
+          </div>
+          <p className="text-xl font-bold font-mono text-[#171717]">
+            {formatCurrency(kpis.activeBookingsValue || bookingStats.totalConfirmedValue)}
           </p>
-          <p className="text-[11px] text-[#737373]">
-            {bookingStats.confirmedCount + bookingStats.inProgressCount} active confirmed events
-          </p>
+          <div className="flex items-center justify-between text-[11px] text-[#737373]">
+            <span>{kpis.upcomingBookingsCount} upcoming in calendar</span>
+            <Link href={`/tenant/${tenantSlug}/bookings`} className="hover:underline font-medium text-[#171717]">
+              View &rarr;
+            </Link>
+          </div>
         </div>
 
+        {/* Total Cash Collected */}
         <div className="rounded-lg border border-[#E5E5E5] bg-white p-4 space-y-1 shadow-xs">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-[#737373]">Upcoming 30 Days</p>
-          <p className="text-lg font-bold text-[#171717]">{bookingStats.upcomingCount} Events</p>
-          <p className="text-[11px] text-[#737373]">Scheduled fulfillment</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#737373]">
+              Revenue Collected
+            </p>
+            <StatusBadge variant="success">Receipts</StatusBadge>
+          </div>
+          <p className="text-xl font-bold font-mono text-emerald-700">
+            {formatCurrency(kpis.totalRevenueCollected)}
+          </p>
+          <div className="flex items-center justify-between text-[11px] text-[#737373]">
+            <span>{formatCurrency(kpis.outstandingInvoiced)} uncollected balance</span>
+            <Link href={`/tenant/${tenantSlug}/payments`} className="hover:underline font-medium text-[#171717]">
+              Payments &rarr;
+            </Link>
+          </div>
+        </div>
+
+        {/* Quotation Pipeline */}
+        <div className="rounded-lg border border-[#E5E5E5] bg-white p-4 space-y-1 shadow-xs">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#737373]">
+              Pipeline Quoted Value
+            </p>
+            <span className="text-[10px] font-mono text-[#737373]">{kpis.pendingQuotesCount} Pending</span>
+          </div>
+          <p className="text-xl font-bold font-mono text-[#171717]">
+            {formatCurrency(kpis.pipelineQuotedValue)}
+          </p>
+          <div className="flex items-center justify-between text-[11px] text-[#737373]">
+            <span>Awaiting client approval</span>
+            <Link href={`/tenant/${tenantSlug}/quotations`} className="hover:underline font-medium text-[#171717]">
+              Quotes &rarr;
+            </Link>
+          </div>
+        </div>
+
+        {/* Operational Health & Currency */}
+        <div className="rounded-lg border border-[#E5E5E5] bg-white p-4 space-y-1 shadow-xs">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#737373]">
+              Workspace &amp; Stock
+            </p>
+            <span className="text-[10px] font-mono font-medium text-[#171717]">{currencyCode}</span>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <p className="text-xl font-bold font-mono text-[#171717]">
+              {kpis.lowStockAlertsCount > 0 ? (
+                <span className="text-amber-700">{kpis.lowStockAlertsCount} Low Stock</span>
+              ) : (
+                <span className="text-emerald-700">Stock Optimal</span>
+              )}
+            </p>
+          </div>
+          <div className="flex items-center justify-between text-[11px] text-[#737373]">
+            <span>{kpis.mealOrdersScheduledCount} meal orders queued</span>
+            <Link href={`/tenant/${tenantSlug}/inventory`} className="hover:underline font-medium text-[#171717]">
+              Inventory &rarr;
+            </Link>
+          </div>
         </div>
       </div>
+
+      {/* Operational Attention Alerts (if any) */}
+      {alerts.length > 0 && (
+        <div className="rounded-lg border border-[#E5E5E5] bg-white p-4 shadow-xs space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#171717]">
+              Operational Attention &amp; Action Required
+            </h3>
+            <span className="text-[11px] text-[#737373]">{alerts.length} Active Items</span>
+          </div>
+          <div className="divide-y divide-[#F0F0F0]">
+            {alerts.map((alert) => (
+              <div key={alert.id} className="py-2.5 flex items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span
+                    className={`inline-block h-2 w-2 rounded-full shrink-0 ${
+                      alert.severity === "error"
+                        ? "bg-rose-500"
+                        : alert.severity === "warning"
+                          ? "bg-amber-500"
+                          : "bg-neutral-400"
+                    }`}
+                  />
+                  <div className="truncate">
+                    <span className="font-medium text-[#171717]">{alert.title}</span>
+                    <span className="text-[#737373] ml-2 text-[11px] truncate">{alert.description}</span>
+                  </div>
+                </div>
+                <Link
+                  href={`/tenant/${tenantSlug}${alert.link}`}
+                  className="rounded border border-[#E5E5E5] bg-white px-2.5 py-1 text-[11px] font-medium text-[#171717] hover:bg-[#FAFAFA] transition-colors shrink-0"
+                >
+                  Resolve &rarr;
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Upcoming Event Execution Schedule Widget */}
       <div className="rounded-lg border border-[#E5E5E5] bg-white p-5 shadow-xs space-y-4">
@@ -230,10 +340,39 @@ export default function TenantDashboardPage() {
 
       {/* Quick Launchpad Navigation */}
       <div className="space-y-4">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-[#737373]">
-          Operational &amp; Commercial Modules
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-[#737373]">
+            Operational &amp; Commercial Modules
+          </h3>
+          <Link
+            href={`/tenant/${tenantSlug}/reports`}
+            className="text-xs font-medium text-[#171717] hover:underline flex items-center gap-1"
+          >
+            <span>Open Executive Reporting Suite</span>
+            <span>&rarr;</span>
+          </Link>
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Executive Reports Card */}
+          <Link
+            href={`/tenant/${tenantSlug}/reports`}
+            className="group rounded-lg border border-[#E5E5E5] bg-white p-5 hover:border-[#171717] transition-all shadow-xs"
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex h-8 w-8 items-center justify-center rounded bg-[#FAFAFA] border border-[#E5E5E5] text-[#171717] group-hover:bg-[#171717] group-hover:text-white transition-colors">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <StatusBadge variant="success">Active</StatusBadge>
+            </div>
+            <h4 className="mt-4 text-sm font-semibold text-[#171717]">Executive Reporting Suite</h4>
+            <p className="mt-1 text-xs text-[#737373] leading-relaxed">
+              Domain performance analytics across Sales Pipeline, Bookings, Finance, and Kitchen Inventory.
+            </p>
+          </Link>
+
           {/* Bookings Card */}
           <Link
             href={`/tenant/${tenantSlug}/bookings`}
@@ -250,6 +389,25 @@ export default function TenantDashboardPage() {
             <h4 className="mt-4 text-sm font-semibold text-[#171717]">Event Bookings &amp; Operations</h4>
             <p className="mt-1 text-xs text-[#737373] leading-relaxed">
               Track confirmed events, manage kitchen &amp; service schedules, venue logistics, and fulfillment.
+            </p>
+          </Link>
+
+          {/* Invoices Card */}
+          <Link
+            href={`/tenant/${tenantSlug}/invoices`}
+            className="group rounded-lg border border-[#E5E5E5] bg-white p-5 hover:border-[#171717] transition-all shadow-xs"
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex h-8 w-8 items-center justify-center rounded bg-[#FAFAFA] border border-[#E5E5E5] text-[#171717] group-hover:bg-[#171717] group-hover:text-white transition-colors">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
+                </svg>
+              </div>
+              <StatusBadge variant="success">Active</StatusBadge>
+            </div>
+            <h4 className="mt-4 text-sm font-semibold text-[#171717]">Invoicing &amp; Balances</h4>
+            <p className="mt-1 text-xs text-[#737373] leading-relaxed">
+              Issue commercial invoices, track balances due, overdue notices, and print-ready accounts.
             </p>
           </Link>
 
@@ -272,79 +430,41 @@ export default function TenantDashboardPage() {
             </p>
           </Link>
 
-          {/* Enquiries Card */}
+          {/* Inventory Card */}
           <Link
-            href={`/tenant/${tenantSlug}/enquiries`}
+            href={`/tenant/${tenantSlug}/inventory`}
             className="group rounded-lg border border-[#E5E5E5] bg-white p-5 hover:border-[#171717] transition-all shadow-xs"
           >
             <div className="flex items-start justify-between">
               <div className="flex h-8 w-8 items-center justify-center rounded bg-[#FAFAFA] border border-[#E5E5E5] text-[#171717] group-hover:bg-[#171717] group-hover:text-white transition-colors">
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
               </div>
               <StatusBadge variant="success">Active</StatusBadge>
             </div>
-            <h4 className="mt-4 text-sm font-semibold text-[#171717]">Sales Enquiries &amp; Pipeline</h4>
+            <h4 className="mt-4 text-sm font-semibold text-[#171717]">Inventory &amp; Stock Levels</h4>
             <p className="mt-1 text-xs text-[#737373] leading-relaxed">
-              Capture leads, qualify guest requirements, log communication timeline, and trigger quotations.
+              Track ingredient stock quantities, reorder levels, cost valuations, and movement ledger.
             </p>
           </Link>
 
-          {/* Customers Card */}
+          {/* Daily Meal Orders Card */}
           <Link
-            href={`/tenant/${tenantSlug}/customers`}
+            href={`/tenant/${tenantSlug}/meal-orders`}
             className="group rounded-lg border border-[#E5E5E5] bg-white p-5 hover:border-[#171717] transition-all shadow-xs"
           >
             <div className="flex items-start justify-between">
               <div className="flex h-8 w-8 items-center justify-center rounded bg-[#FAFAFA] border border-[#E5E5E5] text-[#171717] group-hover:bg-[#171717] group-hover:text-white transition-colors">
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <StatusBadge variant="success">Active</StatusBadge>
             </div>
-            <h4 className="mt-4 text-sm font-semibold text-[#171717]">Customers &amp; Contacts</h4>
+            <h4 className="mt-4 text-sm font-semibold text-[#171717]">Daily Meal Orders</h4>
             <p className="mt-1 text-xs text-[#737373] leading-relaxed">
-              Manage client accounts, corporate accounts, key contact persons, and address records.
-            </p>
-          </Link>
-
-          {/* Menus Card */}
-          <Link
-            href={`/tenant/${tenantSlug}/menus`}
-            className="group rounded-lg border border-[#E5E5E5] bg-white p-5 hover:border-[#171717] transition-all shadow-xs"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex h-8 w-8 items-center justify-center rounded bg-[#FAFAFA] border border-[#E5E5E5] text-[#171717] group-hover:bg-[#171717] group-hover:text-white transition-colors">
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-              </div>
-              <StatusBadge variant="success">Active</StatusBadge>
-            </div>
-            <h4 className="mt-4 text-sm font-semibold text-[#171717]">Menu Builder</h4>
-            <p className="mt-1 text-xs text-[#737373] leading-relaxed">
-              Compose reusable course packages, buffets, plated selections, and price structures.
-            </p>
-          </Link>
-
-          {/* Food Catalogue Card */}
-          <Link
-            href={`/tenant/${tenantSlug}/catalogue`}
-            className="group rounded-lg border border-[#E5E5E5] bg-white p-5 hover:border-[#171717] transition-all shadow-xs"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex h-8 w-8 items-center justify-center rounded bg-[#FAFAFA] border border-[#E5E5E5] text-[#171717] group-hover:bg-[#171717] group-hover:text-white transition-colors">
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
-              </div>
-              <StatusBadge variant="success">Active</StatusBadge>
-            </div>
-            <h4 className="mt-4 text-sm font-semibold text-[#171717]">Food Catalogue &amp; Pricing</h4>
-            <p className="mt-1 text-xs text-[#737373] leading-relaxed">
-              Maintain master dishes, portion units, raw costs, selling rates, and dietary tags.
+              Manage recurring subscription plans, meal dispatch boards, and automated order generation.
             </p>
           </Link>
         </div>

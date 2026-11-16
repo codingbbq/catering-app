@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge, type StatusVariant } from "@/components/ui/status-badge";
 import { listTenants } from "@/lib/platform-api";
+import { getPlatformTenantSummary } from "@/lib/reports-api";
 import { useAuth } from "@/providers/auth-provider";
 
 const STATUS_VARIANT: Record<TenantStatus, StatusVariant> = {
@@ -23,6 +24,12 @@ export default function PlatformPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["platform", "tenants"],
     queryFn: () => listTenants(accessToken!),
+    enabled: isAuthenticated && isPlatform && !!accessToken,
+  });
+
+  const { data: summaryData } = useQuery({
+    queryKey: ["platform", "reports", "tenant-summary"],
+    queryFn: () => getPlatformTenantSummary(accessToken!),
     enabled: isAuthenticated && isPlatform && !!accessToken,
   });
 
@@ -45,17 +52,63 @@ export default function PlatformPage() {
     <div className="space-y-6">
       <PageHeader
         title="Tenants & Organizations"
-        description="Govern multi-tenant organizations, lifecycle statuses, and database schemas."
+        description="Govern multi-tenant organizations, lifecycle statuses, database schemas, and platform oversight metrics."
         actions={
           <Link
             href="/platform/tenants/new"
-            className="inline-flex items-center gap-1.5 rounded bg-[#171717] px-3.5 py-2 text-xs font-medium text-white hover:bg-[#262626] transition-colors"
+            className="inline-flex items-center gap-1.5 rounded bg-[#171717] px-3.5 py-2 text-xs font-medium text-white hover:bg-[#262626] transition-colors shadow-xs"
           >
             <span className="text-sm leading-none">+</span>
             <span>Create Tenant</span>
           </Link>
         }
       />
+
+      {/* Super Admin Platform Overview Cards */}
+      {summaryData && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-lg border border-[#E5E5E5] bg-white p-4 space-y-1 shadow-xs">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#737373]">Total Tenants</p>
+              <StatusBadge variant="success">Platform Active</StatusBadge>
+            </div>
+            <p className="text-xl font-bold font-mono text-[#171717]">{summaryData.totalTenants}</p>
+            <div className="text-[11px] text-[#737373] flex items-center gap-2">
+              <span>{summaryData.tenantsByStatus.active ?? 0} active</span>
+              <span>•</span>
+              <span>{summaryData.tenantsByStatus.onboarding ?? 0} onboarding</span>
+              {summaryData.tenantsByStatus.suspended ? (
+                <>
+                  <span>•</span>
+                  <span className="text-amber-700">{summaryData.tenantsByStatus.suspended} suspended</span>
+                </>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-[#E5E5E5] bg-white p-4 space-y-1 shadow-xs">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#737373]">User Accounts</p>
+            <p className="text-xl font-bold font-mono text-[#171717]">{summaryData.totalTenantUsers}</p>
+            <p className="text-[11px] text-[#737373]">
+              Across all workspaces ({summaryData.totalPlatformUsers} platform operators)
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-[#E5E5E5] bg-white p-4 space-y-1 shadow-xs">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#737373]">Platform Events</p>
+            <p className="text-xl font-bold font-mono text-[#171717]">{summaryData.totalBookingsCount}</p>
+            <p className="text-[11px] text-[#737373]">
+              {summaryData.totalInvoicesCount} commercial invoices issued
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-[#E5E5E5] bg-white p-4 space-y-1 shadow-xs">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#737373]">Catalogue Scale</p>
+            <p className="text-xl font-bold font-mono text-[#171717]">{summaryData.totalCatalogueItemsCount}</p>
+            <p className="text-[11px] text-[#737373]">Master food dishes in database</p>
+          </div>
+        </div>
+      )}
 
       {isLoading && (
         <div className="flex justify-center py-16">

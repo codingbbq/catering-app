@@ -6,7 +6,7 @@
 
 ## Current feature
 
-- `OPS-001` Inventory Management (Completed)
+- `OPS-002` Procurement and Suppliers (Completed)
 
 ## Completed features
 
@@ -26,6 +26,9 @@
 - `FIN-002` Payments
 - `DMO-001` Daily Meal Orders
 - `OPS-001` Inventory Management
+- `OPS-002` Procurement and Suppliers
+- `OPS-003` Kitchen Operations
+- `RPT-001` Reporting and Dashboards
 
 ## Features in progress
 
@@ -37,7 +40,7 @@
 
 ## Next recommended feature
 
-- `OPS-002` Procurement and Suppliers
+- Feature expansion or deployment preparation
 
 ## Current implementation baseline
 
@@ -57,3 +60,6 @@
 - Payments module (`FIN-002`) with sequential numbering (`PAY-YYYYMM-XXXX`), customer receipt tracking, multi-invoice allocation and deallocation with atomic balance synchronization, unallocated customer credit management, status lifecycle (`unallocated`, `partially_allocated`, `allocated`, `void`), void protection with invoice balance reversal, executive monochrome payment dashboard with KPI metrics, and strict database tenant currency consistency complete
 - Daily Meal Orders & Plans module (`DMO-001`) with sequential numbering (`DMO-YYYYMM-XXXX` and `DMP-YYYYMM-XXXX`), customer standing plan subscription management, service slots (`breakfast`, `morning_tea`, `lunch`, `afternoon_tea`, `dinner`, `snack`), operational Kitchen & Dispatch Board with slot volume metrics and rapid status progression (`draft`, `confirmed`, `in_preparation`, `dispatched`, `delivered`, `cancelled`), order register table, recurring order batch generation engine, downstream invoice pre-fill linkage, and strict tenant database currency adoption (e.g. INR) complete
 - Inventory Management module (`OPS-001`) with sequential movement numbering (`SM-YYYYMM-XXXX`), stock item catalog management, atomic stock movements (`purchase_received`, `kitchen_consumption`, `waste_spoilage`, `adjustment_in`, `adjustment_out`, `transfer`, `return_to_supplier`), insufficient stock safeguards, par level and reorder point alerts, full movements audit ledger, category valuation breakdown, and strict tenant database currency adoption (e.g. INR ₹, USD $, EUR €) across all unit costs, total stock valuations, and movement transaction values complete
+- Procurement and Suppliers module (`OPS-002`) with sequential purchase order numbering (`PO-YYYYMM-XXXX`), vendor profile and credit terms management (`due_on_receipt`, `net_15`, `net_30`, `net_45`, `net_60`), itemized purchase ordering with catalogue stock auto-population, status progression (`draft` -> `ordered` -> `partially_received` -> `received` / `cancelled`), atomic receiving workflow generating verified `purchase_received` stock movements (`SM-YYYYMM-XXXX`) directly incrementing on-hand stock and updating unit costs in Inventory (`OPS-001`), Executive Monochrome tabbed management hub (`/procurement`), printable purchase order documentation, and strict tenant database currency consistency (INR, USD, EUR, etc.) complete
+- Kitchen Operations module (`OPS-003`) with sequential production plan numbering (`KPP-YYYYMM-XXXX`), automated demand conversion from confirmed Bookings (`BKG-001`) and Daily Meal Orders (`DMO-001`) as well as standalone plans, station-based mise-en-place and prep task workflows (`prep`, `hot_kitchen`, `cold_kitchen`, `bakery_pastry`, `assembly_packing`, `beverages`, `other`), interactive Workload & Kitchen Board view with quick station and date filtering, rapid task status progression (`pending` -> `in_progress` -> `completed` -> `blocked`), high-contrast printable Kitchen Chit sheet layout for station clipboards, and integrated inventory consumption deduction (`OPS-001`) complete
+- Reporting and Dashboards module (`RPT-001`) with unified tenant dashboard overview metrics, dedicated multi-domain executive reporting suite (`/reports`) featuring Sales & Pipeline, Bookings & Operations, Finance & Cashflow, and Daily Meals & Stock tabs, flexible period filtering (`7d`, `30d`, `90d`, `this_month`, `this_quarter`, `this_year`, `all_time`), client-side CSV exports and print-ready report layouts, urgent operational attention alert feeds, Super Admin platform oversight summaries (`GET /platform/reports/tenant-summary`), and strict database-driven tenant currency adoption (e.g. INR ₹, USD $, EUR €) complete

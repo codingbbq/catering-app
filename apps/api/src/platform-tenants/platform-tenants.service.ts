@@ -1,5 +1,6 @@
 import type {
   CreateTenantRequest,
+  PlatformTenantSummaryReport,
   TenantDetail,
   TenantLifecycleAction,
   TenantListResponse,
@@ -250,5 +251,63 @@ export class PlatformTenantsService {
     this.logger.log(`Tenant ${action}d: ${tenant.slug} (${tenant.status} -> ${targetStatus}) by ${actorId}`);
 
     return toTenantDetail(updated);
+  }
+
+  async getPlatformTenantSummary(): Promise<PlatformTenantSummaryReport> {
+    const tenants = await this.prisma.tenant.findMany({
+      include: {
+        _count: {
+          select: {
+            users: true,
+            bookings: true,
+            invoices: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const tenantsByStatus: Record<string, number> = {
+      onboarding: 0,
+      active: 0,
+      suspended: 0,
+      archived: 0,
+    };
+
+    let totalTenantUsers = 0;
+    let totalBookingsCount = 0;
+    let totalInvoicesCount = 0;
+
+    const tenantActivity = tenants.map((t) => {
+      tenantsByStatus[t.status] = (tenantsByStatus[t.status] ?? 0) + 1;
+      totalTenantUsers += t._count.users;
+      totalBookingsCount += t._count.bookings;
+      totalInvoicesCount += t._count.invoices;
+
+      return {
+        tenantId: t.id,
+        name: t.displayName,
+        slug: t.slug,
+        status: t.status,
+        userCount: t._count.users,
+        bookingCount: t._count.bookings,
+        invoiceCount: t._count.invoices,
+        createdAt: t.createdAt.toISOString(),
+      };
+    });
+
+    const totalPlatformUsers = await this.prisma.platformUser.count();
+    const totalCatalogueItemsCount = await this.prisma.catalogueItem.count();
+
+    return {
+      totalTenants: tenants.length,
+      tenantsByStatus,
+      totalPlatformUsers,
+      totalTenantUsers,
+      totalBookingsCount,
+      totalInvoicesCount,
+      totalCatalogueItemsCount,
+      tenantActivity,
+    };
   }
 }

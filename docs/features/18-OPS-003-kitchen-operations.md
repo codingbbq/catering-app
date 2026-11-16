@@ -89,3 +89,20 @@ Translate commercial demand into production-facing planning so kitchen teams can
 
 - detailed HACCP/compliance tooling
 - workforce scheduling and time tracking
+
+## Implementation status & details
+
+- **Status**: Complete (`COMPLETED`)
+- **Backend**:
+  - `KitchenProductionPlan` and `KitchenTask` Prisma models with sequential numbering (`KPP-YYYYMM-XXXX`)
+  - Station workflows: `prep`, `hot_kitchen`, `cold_kitchen`, `bakery_pastry`, `assembly_packing`, `beverages`, `other`
+  - Lifecycle: `draft`, `scheduled`, `in_progress`, `completed`, `cancelled`
+  - Automated demand translation from confirmed Bookings and Daily Meal Orders
+  - Integrated inventory stock consumption deduction (`OPS-001`) with shortage protection
+  - Unit tests in `apps/api/src/kitchen/kitchen.service.spec.ts` (100% passing)
+- **Frontend**:
+  - Date-based Kitchen Operations Board (`/tenant/[tenantSlug]/kitchen`) with rapid station and status filters
+  - Detail view (`/tenant/[tenantSlug]/kitchen/[planId]`) with station task breakdown and readiness tracking
+  - High-contrast, clean printable Kitchen Chit Sheet mode for station clipboards
+  - Sidebar navigation integration under "Kitchen & Operations"
+  - Strict compliance with Executive Monochrome UI design rules
