@@ -6,7 +6,7 @@
 
 ## Current feature
 
-- `FIN-002` Payments (Completed)
+- `OPS-001` Inventory Management (Completed)
 
 ## Completed features
 
@@ -24,6 +24,8 @@
 - `COM-001` Communication Hub
 - `FIN-001` Invoicing
 - `FIN-002` Payments
+- `DMO-001` Daily Meal Orders
+- `OPS-001` Inventory Management
 
 ## Features in progress
 
@@ -35,7 +37,7 @@
 
 ## Next recommended feature
 
-- `DMO-001` Daily Meal Orders
+- `OPS-002` Procurement and Suppliers
 
 ## Current implementation baseline
 
@@ -53,3 +55,5 @@
 - Communication Hub module with multi-channel support (`email`, `sms`, `whatsapp`, `internal_note`), provider abstraction interface, delivery state tracking (`draft`, `pending`, `sent`, `delivered`, `failed`), retry mechanism, template engine with dynamic placeholder interpolation, dedicated Communication Hub dashboard, and embedded communication timelines across Enquiry, Quotation, and Booking details complete
 - Invoicing module with sequential numbering (`INV-YYYYMM-XXXX`), booking-to-invoice pre-fill & standalone drafting, full lifecycle management (`draft`, `issued`, `partially_paid`, `paid`, `void`), partial and full payment allocation tracking, automatic balance due & overdue status calculation, customer print/export invoice document view, void protection with audit logging, and strict tenant currency consistency (INR, USD, EUR, etc.) complete
 - Payments module (`FIN-002`) with sequential numbering (`PAY-YYYYMM-XXXX`), customer receipt tracking, multi-invoice allocation and deallocation with atomic balance synchronization, unallocated customer credit management, status lifecycle (`unallocated`, `partially_allocated`, `allocated`, `void`), void protection with invoice balance reversal, executive monochrome payment dashboard with KPI metrics, and strict database tenant currency consistency complete
+- Daily Meal Orders & Plans module (`DMO-001`) with sequential numbering (`DMO-YYYYMM-XXXX` and `DMP-YYYYMM-XXXX`), customer standing plan subscription management, service slots (`breakfast`, `morning_tea`, `lunch`, `afternoon_tea`, `dinner`, `snack`), operational Kitchen & Dispatch Board with slot volume metrics and rapid status progression (`draft`, `confirmed`, `in_preparation`, `dispatched`, `delivered`, `cancelled`), order register table, recurring order batch generation engine, downstream invoice pre-fill linkage, and strict tenant database currency adoption (e.g. INR) complete
+- Inventory Management module (`OPS-001`) with sequential movement numbering (`SM-YYYYMM-XXXX`), stock item catalog management, atomic stock movements (`purchase_received`, `kitchen_consumption`, `waste_spoilage`, `adjustment_in`, `adjustment_out`, `transfer`, `return_to_supplier`), insufficient stock safeguards, par level and reorder point alerts, full movements audit ledger, category valuation breakdown, and strict tenant database currency adoption (e.g. INR ₹, USD $, EUR €) across all unit costs, total stock valuations, and movement transaction values complete

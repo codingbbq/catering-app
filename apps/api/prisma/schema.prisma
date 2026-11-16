@@ -47,6 +47,10 @@ model Tenant {
   invoicePayments   InvoicePayment[]
   payments          Payment[]
   paymentAllocations PaymentAllocation[]
+  dailyMealPlans    DailyMealPlan[]
+  dailyMealOrders   DailyMealOrder[]
+  inventoryItems    InventoryItem[]
+  stockMovements    StockMovement[]
   auditLogs   AuditLog[]
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
@@ -184,6 +188,8 @@ model Customer {
   bookings    Booking[]
   invoices    Invoice[]
   payments    Payment[]
+  dailyMealPlans DailyMealPlan[]
+  dailyMealOrders DailyMealOrder[]
   communicationLogs CommunicationLog[]
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
@@ -315,6 +321,8 @@ model CatalogueItem {
   images       CatalogueItemImage[]
   menuItems    MenuItem[]
   recipeItems  RecipeItem[]
+  dailyMealOrderLines DailyMealOrderLine[]
+  inventoryItems      InventoryItem[]
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
@@ -379,6 +387,8 @@ model Menu {
   items        MenuItem[]
   costSheets   CostSheet[]
   quotationRevisions QuotationRevision[]
+  dailyMealPlans DailyMealPlan[]
+  dailyMealOrders DailyMealOrder[]
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
@@ -801,6 +811,8 @@ model Invoice {
   customer          Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
   bookingId         String?
   booking           Booking?           @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  dailyMealOrderId  String?
+  dailyMealOrder    DailyMealOrder?    @relation(fields: [dailyMealOrderId], references: [id], onDelete: SetNull)
   title             String
   issueDate         DateTime
   dueDate           DateTime
@@ -829,6 +841,7 @@ model Invoice {
   @@index([invoiceNumber])
   @@index([customerId])
   @@index([bookingId])
+  @@index([dailyMealOrderId])
   @@index([dueDate])
 }
 
@@ -930,4 +943,201 @@ model PaymentAllocation {
   @@index([tenantId])
   @@index([paymentId])
   @@index([invoiceId])
+}
+
+// --- DMO-001: Daily Meal Orders & Plans ---
+
+enum DailyMealSlot {
+  breakfast
+  morning_tea
+  lunch
+  afternoon_tea
+  dinner
+  snack
+}
+
+enum DailyMealOrderStatus {
+  draft
+  confirmed
+  in_preparation
+  dispatched
+  delivered
+  cancelled
+}
+
+enum DailyMealPlanStatus {
+  active
+  paused
+  cancelled
+}
+
+model DailyMealPlan {
+  id               String              @id @default(uuid())
+  tenantId         String
+  tenant           Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  planNumber       String
+  name             String
+  status           DailyMealPlanStatus @default(active)
+  customerId       String
+  customer         Customer            @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  serviceSlot      DailyMealSlot       @default(lunch)
+  daysOfWeek       String[]            @default([])
+  startDate        DateTime
+  endDate          DateTime?
+  defaultMenuId    String?
+  defaultMenu      Menu?               @relation(fields: [defaultMenuId], references: [id], onDelete: SetNull)
+  defaultQuantity  Decimal             @default(1.0) @db.Decimal(10, 2)
+  defaultUnitPrice Decimal             @default(0.0) @db.Decimal(12, 2)
+  deliveryAddress  String?
+  deliveryNotes    String?
+  dietaryNotes     String?
+  notes            String?             @db.Text
+  orders           DailyMealOrder[]
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([customerId])
+  @@index([planNumber])
+}
+
+model DailyMealOrder {
+  id              String               @id @default(uuid())
+  tenantId        String
+  tenant          Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orderNumber     String
+  status          DailyMealOrderStatus @default(draft)
+  customerId      String
+  customer        Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  planId          String?
+  plan            DailyMealPlan?       @relation(fields: [planId], references: [id], onDelete: SetNull)
+  menuId          String?
+  menu            Menu?                @relation(fields: [menuId], references: [id], onDelete: SetNull)
+  serviceDate     DateTime
+  serviceSlot     DailyMealSlot        @default(lunch)
+  deliveryAddress String?
+  deliveryNotes   String?
+  dietaryNotes    String?
+  currency        String               @default("USD")
+  subtotal        Decimal              @default(0.0) @db.Decimal(12, 2)
+  taxRate         Decimal              @default(0.0) @db.Decimal(5, 2)
+  taxAmount       Decimal              @default(0.0) @db.Decimal(12, 2)
+  discountAmount  Decimal              @default(0.0) @db.Decimal(12, 2)
+  totalAmount     Decimal              @default(0.0) @db.Decimal(12, 2)
+  totalQuantity   Decimal              @default(0.0) @db.Decimal(10, 2)
+  notes           String?              @db.Text
+  internalNotes   String?              @db.Text
+  lines           DailyMealOrderLine[]
+  invoices        Invoice[]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, serviceDate])
+  @@index([tenantId, serviceSlot])
+  @@index([customerId])
+  @@index([planId])
+  @@index([orderNumber])
+}
+
+model DailyMealOrderLine {
+  id              String          @id @default(uuid())
+  orderId         String
+  order           DailyMealOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  catalogueItemId String?
+  catalogueItem   CatalogueItem?  @relation(fields: [catalogueItemId], references: [id], onDelete: SetNull)
+  name            String
+  description     String?
+  quantity        Decimal         @default(1.0) @db.Decimal(10, 2)
+  unitPrice       Decimal         @default(0.0) @db.Decimal(12, 2)
+  totalAmount     Decimal         @default(0.0) @db.Decimal(12, 2)
+  dietaryNotes    String?
+  packagingNotes  String?
+  sortOrder       Int             @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([orderId])
+  @@index([catalogueItemId])
+}
+
+// --- OPS-001: Inventory Management & Stock Movements ---
+
+enum InventoryCategory {
+  produce
+  meat_poultry
+  dairy
+  dry_goods
+  beverages
+  packaging
+  cleaning
+  other
+}
+
+enum StockMovementType {
+  purchase_received
+  kitchen_consumption
+  waste_spoilage
+  adjustment_in
+  adjustment_out
+  transfer
+  return_to_supplier
+}
+
+model InventoryItem {
+  id              String            @id @default(uuid())
+  tenantId        String
+  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sku             String
+  name            String
+  description     String?
+  category        InventoryCategory @default(dry_goods)
+  unit            String            @default("kg")
+  currentStock    Decimal           @default(0.000) @db.Decimal(12, 3)
+  minStockLevel   Decimal           @default(0.000) @db.Decimal(12, 3)
+  maxStockLevel   Decimal?          @db.Decimal(12, 3)
+  reorderQuantity Decimal?          @db.Decimal(12, 3)
+  unitCost        Decimal           @default(0.00) @db.Decimal(12, 2)
+  storageLocation String?
+  isArchived      Boolean           @default(false)
+  notes           String?           @db.Text
+  catalogueItemId String?
+  catalogueItem   CatalogueItem?    @relation(fields: [catalogueItemId], references: [id], onDelete: SetNull)
+  movements       StockMovement[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@unique([tenantId, sku])
+  @@index([tenantId])
+  @@index([tenantId, isArchived])
+  @@index([tenantId, category])
+  @@index([catalogueItemId])
+}
+
+model StockMovement {
+  id              String            @id @default(uuid())
+  tenantId        String
+  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  movementNumber  String
+  inventoryItemId String
+  inventoryItem   InventoryItem     @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  type            StockMovementType
+  quantity        Decimal           @db.Decimal(12, 3)
+  signedQuantity  Decimal           @db.Decimal(12, 3)
+  quantityBefore  Decimal           @db.Decimal(12, 3)
+  quantityAfter   Decimal           @db.Decimal(12, 3)
+  unitCost        Decimal?          @db.Decimal(12, 2)
+  totalCost       Decimal?          @db.Decimal(12, 2)
+  referenceType   String?
+  referenceId     String?
+  reason          String?           @db.Text
+  recordedBy      String?
+  createdAt       DateTime          @default(now())
+
+  @@index([tenantId])
+  @@index([inventoryItemId])
+  @@index([tenantId, createdAt])
+  @@index([movementNumber])
 }

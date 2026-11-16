@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import type {
   CreateInvoiceFromBookingRequest,
+  CreateInvoiceFromMealOrderRequest,
   CreateInvoiceRequest,
   InvoiceDetail,
   InvoiceFilterParams,
@@ -75,6 +76,8 @@ export class InvoicesService {
       customerPhone: inv.customer?.phone ?? null,
       bookingId: inv.bookingId ?? null,
       bookingNumber: inv.booking?.bookingNumber ?? null,
+      dailyMealOrderId: inv.dailyMealOrderId ?? null,
+      dailyMealOrderNumber: inv.dailyMealOrder?.orderNumber ?? null,
       title: inv.title,
       issueDate: inv.issueDate.toISOString(),
       dueDate: inv.dueDate.toISOString(),
@@ -117,6 +120,15 @@ export class InvoicesService {
             bookingNumber: inv.booking.bookingNumber,
             title: inv.booking.title,
             eventDate: inv.booking.eventDate.toISOString(),
+          }
+        : null,
+      dailyMealOrderId: inv.dailyMealOrderId ?? null,
+      dailyMealOrder: inv.dailyMealOrder
+        ? {
+            id: inv.dailyMealOrder.id,
+            orderNumber: inv.dailyMealOrder.orderNumber,
+            serviceDate: inv.dailyMealOrder.serviceDate.toISOString(),
+            serviceSlot: inv.dailyMealOrder.serviceSlot,
           }
         : null,
       title: inv.title,
@@ -179,6 +191,10 @@ export class InvoicesService {
       where.bookingId = params.bookingId;
     }
 
+    if (params?.dailyMealOrderId) {
+      where.dailyMealOrderId = params.dailyMealOrderId;
+    }
+
     if (params?.fromDate || params?.toDate) {
       where.issueDate = {};
       if (params.fromDate) where.issueDate.gte = new Date(params.fromDate);
@@ -217,6 +233,7 @@ export class InvoicesService {
         include: {
           customer: { select: { id: true, name: true, email: true, phone: true } },
           booking: { select: { id: true, bookingNumber: true, title: true } },
+          dailyMealOrder: { select: { id: true, orderNumber: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -297,6 +314,14 @@ export class InvoicesService {
             eventDate: true,
           },
         },
+        dailyMealOrder: {
+          select: {
+            id: true,
+            orderNumber: true,
+            serviceDate: true,
+            serviceSlot: true,
+          },
+        },
         lineItems: { orderBy: { sortOrder: 'asc' } },
         payments: { orderBy: { paymentDate: 'desc' } },
       },
@@ -330,6 +355,15 @@ export class InvoicesService {
       }
     }
 
+    if (dto.dailyMealOrderId) {
+      const mealOrder = await this.prisma.dailyMealOrder.findFirst({
+        where: { id: dto.dailyMealOrderId, tenantId },
+      });
+      if (!mealOrder) {
+        throw new BadRequestException(`Daily meal order ${dto.dailyMealOrderId} not found`);
+      }
+    }
+
     const tenantCurrency = await this.getTenantCurrency(tenantId);
     const currency = dto.currency || tenantCurrency;
 
@@ -347,6 +381,7 @@ export class InvoicesService {
           status: 'draft',
           customerId: dto.customerId,
           bookingId: dto.bookingId ?? null,
+          dailyMealOrderId: dto.dailyMealOrderId ?? null,
           title: dto.title.trim(),
           issueDate: new Date(dto.issueDate),
           dueDate: new Date(dto.dueDate),
@@ -559,6 +594,142 @@ export class InvoicesService {
     return this.mapInvoiceDetail(invoice);
   }
 
+  async createInvoiceFromDailyMealOrder(
+    tenantId: string,
+    userId: string | undefined,
+    dto: CreateInvoiceFromMealOrderRequest,
+  ): Promise<InvoiceDetail> {
+    const order = await this.prisma.dailyMealOrder.findFirst({
+      where: { id: dto.orderId, tenantId },
+      include: {
+        customer: true,
+        lines: { orderBy: { sortOrder: 'asc' } },
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Daily meal order ${dto.orderId} not found`);
+    }
+
+    const tenantCurrency = await this.getTenantCurrency(tenantId);
+    const currency = order.currency || tenantCurrency;
+
+    let lineItems: Array<{
+      description: string;
+      quantity: number;
+      unitPrice: number;
+      notes: string | null;
+      sortOrder: number;
+    }> = [];
+
+    if (order.lines && order.lines.length > 0) {
+      lineItems = order.lines.map((li: any, idx: number) => ({
+        description: li.description ? `${li.name} — ${li.description}` : li.name,
+        quantity: Number(li.quantity),
+        unitPrice: Number(li.unitPrice),
+        notes: li.dietaryNotes || null,
+        sortOrder: li.sortOrder ?? idx,
+      }));
+    } else {
+      lineItems = [
+        {
+          description: `Daily Meal Service — ${order.orderNumber} (${order.serviceSlot})`,
+          quantity: 1,
+          unitPrice: Number(order.totalAmount),
+          notes: `Generated from Daily Meal Order ${order.orderNumber}`,
+          sortOrder: 0,
+        },
+      ];
+    }
+
+    const issueDate = new Date();
+    const dueDate = dto.dueDate
+      ? new Date(dto.dueDate)
+      : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+
+    const taxRate = Number(order.taxRate) || 0;
+    const discountAmount = Number(order.discountAmount) || 0;
+    const totals = calculateInvoiceTotals(lineItems, taxRate, discountAmount);
+
+    const invoiceNumber = await this.generateInvoiceNumber(tenantId);
+    const title = dto.title?.trim() || `Daily Meal Service — ${order.orderNumber}`;
+
+    const invoice = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.invoice.create({
+        data: {
+          tenantId,
+          invoiceNumber,
+          status: 'draft',
+          customerId: order.customerId,
+          dailyMealOrderId: order.id,
+          title,
+          issueDate,
+          dueDate,
+          currency,
+          subtotal: totals.subtotal,
+          taxRate,
+          taxAmount: totals.taxAmount,
+          discountAmount: totals.discountAmount,
+          totalAmount: totals.totalAmount,
+          paidAmount: 0,
+          balanceDue: totals.totalAmount,
+          notes: dto.notes?.trim() || order.notes || `Invoice for daily meal order ${order.orderNumber}`,
+          terms: 'Standard terms: Net 14 days from delivery.',
+          lineItems: {
+            create: lineItems.map((li) => ({
+              description: li.description,
+              quantity: li.quantity,
+              unitPrice: li.unitPrice,
+              totalAmount: Math.round(li.quantity * li.unitPrice * 100) / 100,
+              notes: li.notes,
+              sortOrder: li.sortOrder,
+            })),
+          },
+        },
+        include: {
+          customer: true,
+          booking: {
+            select: {
+              id: true,
+              bookingNumber: true,
+              title: true,
+              eventDate: true,
+            },
+          },
+          dailyMealOrder: {
+            select: {
+              id: true,
+              orderNumber: true,
+              serviceDate: true,
+              serviceSlot: true,
+            },
+          },
+          lineItems: { orderBy: { sortOrder: 'asc' } },
+          payments: true,
+        },
+      });
+
+      return created;
+    });
+
+    this.auditLogService.record({
+      scope: 'tenant',
+      tenantId,
+      actorType: userId ? 'tenant_user' : 'system',
+      action: 'invoice.created_from_meal_order',
+      outcome: 'allowed',
+      metadata: {
+        invoiceId: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        dailyMealOrderId: order.id,
+        totalAmount: String(Number(invoice.totalAmount)),
+        currency,
+      },
+    });
+
+    return this.mapInvoiceDetail(invoice);
+  }
+
   async updateInvoice(
     tenantId: string,
     userId: string | undefined,
@@ -706,6 +877,14 @@ export class InvoicesService {
             bookingNumber: true,
             title: true,
             eventDate: true,
+          },
+        },
+        dailyMealOrder: {
+          select: {
+            id: true,
+            orderNumber: true,
+            serviceDate: true,
+            serviceSlot: true,
           },
         },
         lineItems: { orderBy: { sortOrder: 'asc' } },
@@ -917,6 +1096,14 @@ export class InvoicesService {
             bookingNumber: true,
             title: true,
             eventDate: true,
+          },
+        },
+        dailyMealOrder: {
+          select: {
+            id: true,
+            orderNumber: true,
+            serviceDate: true,
+            serviceSlot: true,
           },
         },
         lineItems: { orderBy: { sortOrder: 'asc' } },

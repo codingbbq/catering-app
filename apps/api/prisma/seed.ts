@@ -675,6 +675,408 @@ async function main() {
     console.log('Seeded demo communication logs (Email, WhatsApp, SMS, Internal Note, and Failed Retry test)');
   }
 
+  // --- Seed Demo Daily Meal Plans & Orders (DMO-001) ---
+  const existingMealPlan = await prisma.dailyMealPlan.findFirst({
+    where: { tenantId: tenant.id },
+  });
+
+  if (!existingMealPlan) {
+    const demoMenu = await prisma.menu.findFirst({
+      where: { tenantId: tenant.id },
+    });
+    const demoCatalogueItem = await prisma.catalogueItem.findFirst({
+      where: { tenantId: tenant.id },
+    });
+
+    const mealPlan1 = await prisma.dailyMealPlan.create({
+      data: {
+        tenantId: tenant.id,
+        planNumber: 'DMP-202611-0001',
+        name: 'Apex Tech Daily Executive Lunch',
+        status: 'active',
+        customerId: customer1.id,
+        serviceSlot: 'lunch',
+        daysOfWeek: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+        startDate: new Date('2026-11-01T00:00:00Z'),
+        defaultMenuId: demoMenu ? demoMenu.id : null,
+        defaultQuantity: 45,
+        defaultUnitPrice: 180,
+        deliveryAddress: 'Cafeteria Wing B, 42 Tech Park, Outer Ring Road, Bangalore',
+        deliveryNotes: 'Deliver to 3rd floor pantry by 12:15 PM sharp. Contact security desk for freight elevator.',
+        dietaryNotes: '10 Vegetarian (Jain-friendly), 35 Standard Corporate Meals. Strictly peanut-free.',
+        notes: 'Corporate weekly invoiced account with agreed SLA of 12:15 PM delivery.',
+      },
+    });
+    console.log(`Seeded daily meal plan: ${mealPlan1.planNumber} (${mealPlan1.name})`);
+
+    // Today's date normalized
+    const today = new Date();
+    today.setHours(12, 30, 0, 0);
+
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Order 1: Today Lunch (In Preparation)
+    const order1 = await prisma.dailyMealOrder.create({
+      data: {
+        tenantId: tenant.id,
+        orderNumber: 'DMO-202611-0001',
+        status: 'in_preparation',
+        customerId: customer1.id,
+        planId: mealPlan1.id,
+        menuId: demoMenu ? demoMenu.id : null,
+        serviceDate: today,
+        serviceSlot: 'lunch',
+        deliveryAddress: 'Cafeteria Wing B, 42 Tech Park, Outer Ring Road, Bangalore',
+        deliveryNotes: 'Freight elevator gate 2. Call ops upon arrival.',
+        dietaryNotes: '10 Vegetarian, 35 Standard Non-Veg.',
+        currency: 'INR',
+        subtotal: 8100,
+        taxRate: 5,
+        taxAmount: 405,
+        discountAmount: 0,
+        totalAmount: 8505,
+        totalQuantity: 45,
+        notes: 'Standing plan weekday delivery.',
+        lines: {
+          create: [
+            {
+              catalogueItemId: demoCatalogueItem ? demoCatalogueItem.id : null,
+              name: 'Executive Bento Lunch - Standard',
+              description: 'Fresh warm meal tray with main curry, rice, bread, salad, dessert',
+              quantity: 35,
+              unitPrice: 180,
+              totalAmount: 6300,
+              dietaryNotes: 'Regular',
+              sortOrder: 0,
+            },
+            {
+              name: 'Executive Bento Lunch - Jain Veg',
+              description: 'No onion, no garlic vegetarian meal box',
+              quantity: 10,
+              unitPrice: 180,
+              totalAmount: 1800,
+              dietaryNotes: 'Strict Jain Veg',
+              sortOrder: 1,
+            },
+          ],
+        },
+      },
+    });
+
+    // Order 2: Today Morning Tea for Customer 2 (Dispatched)
+    const order2 = await prisma.dailyMealOrder.create({
+      data: {
+        tenantId: tenant.id,
+        orderNumber: 'DMO-202611-0002',
+        status: 'dispatched',
+        customerId: customer2.id,
+        serviceDate: today,
+        serviceSlot: 'morning_tea',
+        deliveryAddress: 'Villa 14, Palm Meadows, Bangalore',
+        deliveryNotes: 'Leave with resident concierge.',
+        dietaryNotes: 'Gluten-free snacks requested.',
+        currency: 'INR',
+        subtotal: 3600,
+        taxRate: 5,
+        taxAmount: 180,
+        discountAmount: 0,
+        totalAmount: 3780,
+        totalQuantity: 20,
+        notes: 'Special morning workshop refreshments.',
+        lines: {
+          create: [
+            {
+              name: 'Artisan Morning Tea & Pastry Box',
+              description: 'Assorted finger pastries, savory puff, masala chai flask',
+              quantity: 20,
+              unitPrice: 180,
+              totalAmount: 3600,
+              sortOrder: 0,
+            },
+          ],
+        },
+      },
+    });
+
+    // Order 3: Tomorrow Lunch (Confirmed)
+    await prisma.dailyMealOrder.create({
+      data: {
+        tenantId: tenant.id,
+        orderNumber: 'DMO-202611-0003',
+        status: 'confirmed',
+        customerId: customer1.id,
+        planId: mealPlan1.id,
+        serviceDate: tomorrow,
+        serviceSlot: 'lunch',
+        deliveryAddress: 'Cafeteria Wing B, 42 Tech Park, Outer Ring Road, Bangalore',
+        deliveryNotes: 'Standard delivery protocol.',
+        dietaryNotes: '10 Veg, 35 Non-Veg',
+        currency: 'INR',
+        subtotal: 8100,
+        taxRate: 5,
+        taxAmount: 405,
+        discountAmount: 0,
+        totalAmount: 8505,
+        totalQuantity: 45,
+        notes: 'Scheduled tomorrow order from plan.',
+        lines: {
+          create: [
+            {
+              name: 'Executive Bento Lunch - Standard',
+              quantity: 35,
+              unitPrice: 180,
+              totalAmount: 6300,
+              sortOrder: 0,
+            },
+            {
+              name: 'Executive Bento Lunch - Veg',
+              quantity: 10,
+              unitPrice: 180,
+              totalAmount: 1800,
+              sortOrder: 1,
+            },
+          ],
+        },
+      },
+    });
+
+    // Order 4: Yesterday Lunch (Delivered & linked to Invoice)
+    const order4 = await prisma.dailyMealOrder.create({
+      data: {
+        tenantId: tenant.id,
+        orderNumber: 'DMO-202611-0004',
+        status: 'delivered',
+        customerId: customer1.id,
+        planId: mealPlan1.id,
+        serviceDate: yesterday,
+        serviceSlot: 'lunch',
+        deliveryAddress: 'Cafeteria Wing B, 42 Tech Park, Outer Ring Road, Bangalore',
+        currency: 'INR',
+        subtotal: 8100,
+        taxRate: 5,
+        taxAmount: 405,
+        discountAmount: 0,
+        totalAmount: 8505,
+        totalQuantity: 45,
+        lines: {
+          create: [
+            {
+              name: 'Executive Bento Lunch - Standard',
+              quantity: 45,
+              unitPrice: 180,
+              totalAmount: 8100,
+              sortOrder: 0,
+            },
+          ],
+        },
+      },
+    });
+
+    // Create linked invoice for Order 4
+    await prisma.invoice.create({
+      data: {
+        tenantId: tenant.id,
+        invoiceNumber: 'INV-202611-0099',
+        status: 'issued',
+        customerId: customer1.id,
+        dailyMealOrderId: order4.id,
+        title: 'Daily Meal Order Service - DMO-202611-0004',
+        issueDate: yesterday,
+        dueDate: new Date(yesterday.getTime() + 14 * 24 * 60 * 60 * 1000),
+        currency: 'INR',
+        subtotal: 8100,
+        taxRate: 5,
+        taxAmount: 405,
+        discountAmount: 0,
+        totalAmount: 8505,
+        paidAmount: 0,
+        balanceDue: 8505,
+        notes: 'Automated invoice generated for Daily Meal Order DMO-202611-0004.',
+        terms: 'Net 14 Days from receipt.',
+        issuedAt: yesterday,
+        lineItems: {
+          create: [
+            {
+              description: 'Executive Bento Lunch - Standard (Daily Meal Order DMO-202611-0004)',
+              quantity: 45,
+              unitPrice: 180,
+              totalAmount: 8100,
+              sortOrder: 0,
+            },
+          ],
+        },
+      },
+    });
+
+    console.log(`Seeded 4 daily meal orders and 1 linked invoice for demo tenant`);
+  }
+
+  // Seed OPS-001: Inventory Items and Stock Movements
+  const existingInventory = await prisma.inventoryItem.count({ where: { tenantId: tenant.id } });
+  if (existingInventory === 0) {
+    const rawItems = [
+      {
+        sku: 'ING-BAS-001',
+        name: 'Royal Basmati Rice Aged',
+        description: 'Premium aged extra-long grain basmati rice for biryanis and pilafs',
+        category: 'dry_goods' as const,
+        unit: 'kg',
+        currentStock: 120.0,
+        minStockLevel: 50.0,
+        maxStockLevel: 300.0,
+        reorderQuantity: 100.0,
+        unitCost: 140.0,
+        storageLocation: 'Dry Pantry A - Rack 1',
+      },
+      {
+        sku: 'ING-PAN-002',
+        name: 'Fresh Malai Paneer',
+        description: 'Farm-fresh cottage cheese vacuum packed daily',
+        category: 'dairy' as const,
+        unit: 'kg',
+        currentStock: 14.5,
+        minStockLevel: 20.0, // Low stock alert!
+        maxStockLevel: 60.0,
+        reorderQuantity: 30.0,
+        unitCost: 340.0,
+        storageLocation: 'Cold Storage Room 1 - Shelf B',
+      },
+      {
+        sku: 'ING-CHK-003',
+        name: 'Fresh Boneless Chicken Breast',
+        description: 'Hygienically dressed boneless poultry breasts',
+        category: 'meat_poultry' as const,
+        unit: 'kg',
+        currentStock: 45.0,
+        minStockLevel: 25.0,
+        maxStockLevel: 100.0,
+        reorderQuantity: 50.0,
+        unitCost: 260.0,
+        storageLocation: 'Deep Freeze - Bay 3',
+      },
+      {
+        sku: 'ING-OIL-004',
+        name: 'Pure Desi Cow Ghee',
+        description: 'Aromatic traditional clarified butter for royal dishes and sweets',
+        category: 'dairy' as const,
+        unit: 'ltr',
+        currentStock: 35.0,
+        minStockLevel: 15.0,
+        maxStockLevel: 80.0,
+        reorderQuantity: 30.0,
+        unitCost: 650.0,
+        storageLocation: 'Dry Pantry B - Tier 2',
+      },
+      {
+        sku: 'ING-VEG-005',
+        name: 'Fresh Farm Tomatoes (Roma)',
+        description: 'Vine-ripened firm red tomatoes for gravies and salads',
+        category: 'produce' as const,
+        unit: 'kg',
+        currentStock: 8.0,
+        minStockLevel: 25.0, // Low stock alert!
+        maxStockLevel: 80.0,
+        reorderQuantity: 40.0,
+        unitCost: 35.0,
+        storageLocation: 'Walk-in Chiller - Bin 4',
+      },
+      {
+        sku: 'PKG-BOX-006',
+        name: 'Eco 5-Compartment Meal Tray',
+        description: 'Biodegradable bagasse meal trays with tight-fit clear lids',
+        category: 'packaging' as const,
+        unit: 'piece',
+        currentStock: 450.0,
+        minStockLevel: 200.0,
+        maxStockLevel: 1500.0,
+        reorderQuantity: 500.0,
+        unitCost: 6.5,
+        storageLocation: 'Packaging Warehouse - Bay A',
+      },
+      {
+        sku: 'BEV-TEA-007',
+        name: 'Assam Gold Tea Leaves',
+        description: 'High-grown strong CTC tea leaves for high-tea service',
+        category: 'beverages' as const,
+        unit: 'kg',
+        currentStock: 0.0, // Out of stock alert!
+        minStockLevel: 10.0,
+        maxStockLevel: 40.0,
+        reorderQuantity: 20.0,
+        unitCost: 380.0,
+        storageLocation: 'Beverage Bar Pantry',
+      },
+    ];
+
+    for (const [idx, itemData] of rawItems.entries()) {
+      const createdItem = await prisma.inventoryItem.create({
+        data: {
+          tenantId: tenant.id,
+          sku: itemData.sku,
+          name: itemData.name,
+          description: itemData.description,
+          category: itemData.category,
+          unit: itemData.unit,
+          currentStock: itemData.currentStock,
+          minStockLevel: itemData.minStockLevel,
+          maxStockLevel: itemData.maxStockLevel,
+          reorderQuantity: itemData.reorderQuantity,
+          unitCost: itemData.unitCost,
+          storageLocation: itemData.storageLocation,
+        },
+      });
+
+      if (itemData.currentStock > 0) {
+        await prisma.stockMovement.create({
+          data: {
+            tenantId: tenant.id,
+            movementNumber: `SM-202611-000${idx + 1}`,
+            inventoryItemId: createdItem.id,
+            type: 'purchase_received',
+            quantity: itemData.currentStock + (itemData.sku === 'ING-PAN-002' ? 10.0 : 0),
+            signedQuantity: itemData.currentStock + (itemData.sku === 'ING-PAN-002' ? 10.0 : 0),
+            quantityBefore: 0,
+            quantityAfter: itemData.currentStock + (itemData.sku === 'ING-PAN-002' ? 10.0 : 0),
+            unitCost: itemData.unitCost,
+            totalCost: (itemData.currentStock + (itemData.sku === 'ING-PAN-002' ? 10.0 : 0)) * itemData.unitCost,
+            referenceType: 'purchase_order',
+            referenceId: `PO-202611-${100 + idx}`,
+            reason: 'Opening stock shipment from verified vendor',
+            recordedBy: 'procurement@demo.test',
+          },
+        });
+
+        // Add a kitchen consumption movement for Paneer to show usage history
+        if (itemData.sku === 'ING-PAN-002') {
+          await prisma.stockMovement.create({
+            data: {
+              tenantId: tenant.id,
+              movementNumber: `SM-202611-0099`,
+              inventoryItemId: createdItem.id,
+              type: 'kitchen_consumption',
+              quantity: 10.0,
+              signedQuantity: -10.0,
+              quantityBefore: 24.5,
+              quantityAfter: 14.5,
+              unitCost: itemData.unitCost,
+              totalCost: 10.0 * itemData.unitCost,
+              referenceType: 'daily_meal_order',
+              referenceId: 'DMO-202611-0001',
+              reason: 'Paneer Tikka Bento box batch prep for TechCorp',
+              recordedBy: 'headchef@demo.test',
+            },
+          });
+        }
+      }
+    }
+
+    console.log(`Seeded 7 inventory items with stock movement ledger for demo tenant`);
+  }
+
   console.log('\nSeed complete. You can now sign in:');
   console.log('  Platform: POST /platform/auth/sign-in  { email: "admin@platform.test", password: "Admin@12345678" }');
   console.log(`  Tenant:   POST /auth/sign-in/${tenant.slug}  { email: "owner@demo.test", password: "Owner@12345678" }`);

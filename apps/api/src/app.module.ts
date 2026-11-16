@@ -12,6 +12,8 @@ import { BookingsModule } from './bookings/bookings.module.js';
 import { CommunicationsModule } from './communications/communications.module.js';
 import { InvoicesModule } from './invoices/invoices.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
+import { DailyMealOrdersModule } from './daily-meal-orders/daily-meal-orders.module.js';
+import { InventoryModule } from './inventory/inventory.module.js';
 import { PlatformTenantsModule } from './platform-tenants/platform-tenants.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { TenancyModule } from './tenancy/tenancy.module.js';
@@ -34,6 +36,8 @@ import { TenantAdminModule } from './tenant-admin/tenant-admin.module.js';
     CommunicationsModule,
     InvoicesModule,
     PaymentsModule,
+    DailyMealOrdersModule,
+    InventoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

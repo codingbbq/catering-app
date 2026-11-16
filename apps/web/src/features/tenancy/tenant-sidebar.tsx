@@ -142,7 +142,7 @@ export function TenantSidebar({ tenantSlug }: TenantSidebarProps) {
           label: "Daily Meal Orders",
           href: `/tenant/${tenantSlug}/meal-orders`,
           exact: false,
-          implemented: false,
+          implemented: true,
           icon: ({ className }) => (
             <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -180,7 +180,7 @@ export function TenantSidebar({ tenantSlug }: TenantSidebarProps) {
           label: "Inventory",
           href: `/tenant/${tenantSlug}/inventory`,
           exact: false,
-          implemented: false,
+          implemented: true,
           icon: ({ className }) => (
             <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />

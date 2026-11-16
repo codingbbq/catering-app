@@ -91,3 +91,26 @@ Support recurring or scheduled meal-service orders outside the event-booking wor
 
 - consumer self-service ordering portal
 - route optimization and fleet management
+
+## Implementation Status
+
+- **Status**: Completed (`DMO-001`)
+- **Prisma Models**: `DailyMealPlan`, `DailyMealOrder`, `DailyMealOrderLine`, linked with `Customer`, `Menu`, `CatalogueItem`, and `Invoice`.
+- **Database Migrations**: Applied via `prisma db push` and seeded via `prisma/seed.ts`.
+- **Backend Endpoints**:
+  - `GET /daily-meal-orders` (supports date, slot, status, customer, search, pagination)
+  - `GET /daily-meal-orders/stats` (daily & date range aggregates by slot)
+  - `GET /daily-meal-orders/:orderId`
+  - `POST /daily-meal-orders` (sequential number `DMO-YYYYMM-XXXX`)
+  - `PATCH /daily-meal-orders/:orderId`
+  - `POST /daily-meal-orders/:orderId/status` & `POST /daily-meal-orders/:orderId/confirm`
+  - `POST /daily-meal-orders/:orderId/invoice` (drafts linked invoice)
+  - `GET /daily-meal-plans`, `POST /daily-meal-plans`, `GET /daily-meal-plans/:planId`, `PATCH /daily-meal-plans/:planId`
+  - `POST /daily-meal-plans/:planId/generate-orders` (batch orders generator)
+- **Currency Compliance**: Strictly enforces tenant database currency (`TenantSettings.currencyCode`, e.g. INR) across both API calculations and Web UI.
+- **Frontend Routes**:
+  - `/tenant/[tenantSlug]/meal-orders`: Hub featuring Operations Board, Orders Register, Standing Plans, Date switcher, and KPI summaries.
+  - `/tenant/[tenantSlug]/meal-orders/new`: Order creation form with portion lines and live total calculation.
+  - `/tenant/[tenantSlug]/meal-orders/[orderId]`: Order detail view with status lifecycle controls and invoice generation.
+  - `/tenant/[tenantSlug]/meal-orders/[orderId]/edit`: Order editing screen.
+- **Test Suite**: 8 unit tests in `daily-meal-orders.service.spec.ts` covering calculations, status transitions, recurring plan batch generation, and invoice linkage (103 total tests passing).

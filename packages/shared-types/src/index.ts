@@ -1868,6 +1868,8 @@ export const invoiceListItemSchema = z.object({
   customerPhone: z.string().nullable().optional(),
   bookingId: z.string().uuid().nullable().optional(),
   bookingNumber: z.string().nullable().optional(),
+  dailyMealOrderId: z.string().uuid().nullable().optional(),
+  dailyMealOrderNumber: z.string().nullable().optional(),
   title: z.string(),
   issueDate: z.string(),
   dueDate: z.string(),
@@ -1908,6 +1910,16 @@ export const invoiceDetailSchema = z.object({
       bookingNumber: z.string(),
       title: z.string(),
       eventDate: z.string(),
+    })
+    .nullable()
+    .optional(),
+  dailyMealOrderId: z.string().uuid().nullable().optional(),
+  dailyMealOrder: z
+    .object({
+      id: z.string().uuid(),
+      orderNumber: z.string(),
+      serviceDate: z.string(),
+      serviceSlot: z.string(),
     })
     .nullable()
     .optional(),
@@ -1958,6 +1970,7 @@ export type InvoiceListResponse = z.infer<typeof invoiceListResponseSchema>;
 export const createInvoiceRequestSchema = z.object({
   customerId: z.string().uuid("Customer is required"),
   bookingId: z.string().uuid().optional().nullable(),
+  dailyMealOrderId: z.string().uuid().optional().nullable(),
   title: z.string().min(1, "Invoice title is required"),
   issueDate: z.string().min(1, "Issue date is required"),
   dueDate: z.string().min(1, "Due date is required"),
@@ -2004,6 +2017,7 @@ export const invoiceFilterParamsSchema = z.object({
   status: z.enum(["all", "draft", "issued", "partially_paid", "paid", "void", "overdue"]).optional(),
   customerId: z.string().uuid().optional(),
   bookingId: z.string().uuid().optional(),
+  dailyMealOrderId: z.string().uuid().optional(),
   fromDate: z.string().optional(),
   toDate: z.string().optional(),
   search: z.string().optional(),
@@ -2188,4 +2202,576 @@ export const paymentListResponseSchema = z.object({
   totalPages: z.number().int().nonnegative(),
 });
 export type PaymentListResponse = z.infer<typeof paymentListResponseSchema>;
+
+// ==========================================
+// Daily Meal Orders & Plans (DMO-001)
+// ==========================================
+
+export const dailyMealSlotSchema = z.enum([
+  "breakfast",
+  "morning_tea",
+  "lunch",
+  "afternoon_tea",
+  "dinner",
+  "snack",
+]);
+export type DailyMealSlot = z.infer<typeof dailyMealSlotSchema>;
+
+export const dailyMealOrderStatusSchema = z.enum([
+  "draft",
+  "confirmed",
+  "in_preparation",
+  "dispatched",
+  "delivered",
+  "cancelled",
+]);
+export type DailyMealOrderStatus = z.infer<typeof dailyMealOrderStatusSchema>;
+
+export const dailyMealPlanStatusSchema = z.enum([
+  "active",
+  "paused",
+  "cancelled",
+]);
+export type DailyMealPlanStatus = z.infer<typeof dailyMealPlanStatusSchema>;
+
+export const dayOfWeekSchema = z.enum([
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+]);
+export type DayOfWeek = z.infer<typeof dayOfWeekSchema>;
+
+// Deterministic calculation for Daily Meal Orders
+export function calculateDailyMealOrderTotals(
+  items: Array<{ quantity: number; unitPrice: number }>,
+  taxRate: number = 0,
+  discountAmount: number = 0,
+) {
+  const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
+
+  const totalQuantity = round2(
+    items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0),
+  );
+
+  const subtotal = round2(
+    items.reduce((sum, item) => sum + round2((Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)), 0),
+  );
+
+  const safeTaxRate = Math.max(0, Math.min(100, Number(taxRate) || 0));
+  const taxAmount = round2((subtotal * safeTaxRate) / 100);
+
+  const safeDiscount = Math.max(0, Math.min(subtotal + taxAmount, Number(discountAmount) || 0));
+  const totalAmount = round2(Math.max(0, subtotal + taxAmount - safeDiscount));
+
+  return {
+    totalQuantity,
+    subtotal,
+    taxRate: safeTaxRate,
+    taxAmount,
+    discountAmount: safeDiscount,
+    totalAmount,
+  };
+}
+
+// Order Lines
+export const dailyMealOrderLineSchema = z.object({
+  id: z.string().uuid(),
+  orderId: z.string().uuid(),
+  catalogueItemId: z.string().uuid().nullable().optional(),
+  catalogueItemName: z.string().optional(),
+  name: z.string(),
+  description: z.string().nullable().optional(),
+  quantity: z.number().positive(),
+  unitPrice: z.number().nonnegative(),
+  totalAmount: z.number().nonnegative(),
+  dietaryNotes: z.string().nullable().optional(),
+  packagingNotes: z.string().nullable().optional(),
+  sortOrder: z.number().int().default(0),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+export type DailyMealOrderLine = z.infer<typeof dailyMealOrderLineSchema>;
+
+export const createDailyMealOrderLineSchema = z.object({
+  catalogueItemId: z.string().uuid().optional().nullable(),
+  name: z.string().min(1, "Item name is required"),
+  description: z.string().optional().nullable(),
+  quantity: z.number().positive("Quantity must be greater than 0"),
+  unitPrice: z.number().nonnegative("Unit price must be non-negative"),
+  dietaryNotes: z.string().optional().nullable(),
+  packagingNotes: z.string().optional().nullable(),
+  sortOrder: z.number().int().optional(),
+});
+export type CreateDailyMealOrderLine = z.infer<typeof createDailyMealOrderLineSchema>;
+
+// Order List & Details
+export const dailyMealOrderListItemSchema = z.object({
+  id: z.string().uuid(),
+  tenantId: z.string().uuid(),
+  orderNumber: z.string(),
+  status: dailyMealOrderStatusSchema,
+  customerId: z.string().uuid(),
+  customerName: z.string(),
+  customerEmail: z.string().nullable().optional(),
+  customerPhone: z.string().nullable().optional(),
+  planId: z.string().uuid().nullable().optional(),
+  planName: z.string().nullable().optional(),
+  menuId: z.string().uuid().nullable().optional(),
+  menuName: z.string().nullable().optional(),
+  serviceDate: z.string(),
+  serviceSlot: dailyMealSlotSchema,
+  deliveryAddress: z.string().nullable().optional(),
+  deliveryNotes: z.string().nullable().optional(),
+  dietaryNotes: z.string().nullable().optional(),
+  currency: z.string(),
+  subtotal: z.number().nonnegative(),
+  taxRate: z.number().nonnegative(),
+  taxAmount: z.number().nonnegative(),
+  discountAmount: z.number().nonnegative(),
+  totalAmount: z.number().nonnegative(),
+  totalQuantity: z.number().nonnegative(),
+  lineCount: z.number().int().nonnegative().optional(),
+  invoiceCount: z.number().int().nonnegative().optional(),
+  invoices: z
+    .array(
+      z.object({
+        id: z.string().uuid(),
+        invoiceNumber: z.string(),
+        status: z.string(),
+        totalAmount: z.number(),
+        balanceDue: z.number(),
+      }),
+    )
+    .optional(),
+  notes: z.string().nullable().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type DailyMealOrderListItem = z.infer<typeof dailyMealOrderListItemSchema>;
+
+export const dailyMealOrderDetailSchema = dailyMealOrderListItemSchema.extend({
+  lines: z.array(dailyMealOrderLineSchema),
+  internalNotes: z.string().nullable().optional(),
+  customer: z
+    .object({
+      id: z.string().uuid(),
+      name: z.string(),
+      email: z.string().nullable().optional(),
+      phone: z.string().nullable().optional(),
+      company: z.string().nullable().optional(),
+    })
+    .optional(),
+  menu: z
+    .object({
+      id: z.string().uuid(),
+      name: z.string(),
+    })
+    .nullable()
+    .optional(),
+  plan: z
+    .object({
+      id: z.string().uuid(),
+      name: z.string(),
+      planNumber: z.string(),
+    })
+    .nullable()
+    .optional(),
+});
+export type DailyMealOrderDetail = z.infer<typeof dailyMealOrderDetailSchema>;
+
+// Requests
+export const createDailyMealOrderRequestSchema = z.object({
+  customerId: z.string().uuid("Customer is required"),
+  planId: z.string().uuid().optional().nullable(),
+  menuId: z.string().uuid().optional().nullable(),
+  serviceDate: z.string().min(1, "Service date is required"),
+  serviceSlot: dailyMealSlotSchema,
+  deliveryAddress: z.string().optional().nullable(),
+  deliveryNotes: z.string().optional().nullable(),
+  dietaryNotes: z.string().optional().nullable(),
+  taxRate: z.number().min(0).max(100).optional().default(0),
+  discountAmount: z.number().nonnegative().optional().default(0),
+  notes: z.string().optional().nullable(),
+  internalNotes: z.string().optional().nullable(),
+  lines: z.array(createDailyMealOrderLineSchema).min(1, "At least one order line is required"),
+});
+export type CreateDailyMealOrderRequest = z.infer<typeof createDailyMealOrderRequestSchema>;
+
+export const updateDailyMealOrderRequestSchema = z.object({
+  customerId: z.string().uuid().optional(),
+  menuId: z.string().uuid().optional().nullable(),
+  serviceDate: z.string().optional(),
+  serviceSlot: dailyMealSlotSchema.optional(),
+  deliveryAddress: z.string().optional().nullable(),
+  deliveryNotes: z.string().optional().nullable(),
+  dietaryNotes: z.string().optional().nullable(),
+  taxRate: z.number().min(0).max(100).optional(),
+  discountAmount: z.number().nonnegative().optional(),
+  notes: z.string().optional().nullable(),
+  internalNotes: z.string().optional().nullable(),
+  lines: z.array(createDailyMealOrderLineSchema).optional(),
+});
+export type UpdateDailyMealOrderRequest = z.infer<typeof updateDailyMealOrderRequestSchema>;
+
+export const updateDailyMealOrderStatusRequestSchema = z.object({
+  status: dailyMealOrderStatusSchema,
+  notes: z.string().optional().nullable(),
+});
+export type UpdateDailyMealOrderStatusRequest = z.infer<typeof updateDailyMealOrderStatusRequestSchema>;
+
+export const dailyMealOrderFilterParamsSchema = z.object({
+  status: z.enum(["all", "draft", "confirmed", "in_preparation", "dispatched", "delivered", "cancelled"]).optional(),
+  serviceSlot: z.enum(["all", "breakfast", "morning_tea", "lunch", "afternoon_tea", "dinner", "snack"]).optional(),
+  customerId: z.string().uuid().optional(),
+  planId: z.string().uuid().optional(),
+  serviceDate: z.string().optional(),
+  fromDate: z.string().optional(),
+  toDate: z.string().optional(),
+  search: z.string().optional(),
+  page: z.number().int().positive().optional(),
+  limit: z.number().int().positive().optional(),
+});
+export type DailyMealOrderFilterParams = z.infer<typeof dailyMealOrderFilterParamsSchema>;
+
+export const dailyMealOrderSlotStatsSchema = z.object({
+  slot: dailyMealSlotSchema,
+  orderCount: z.number().int().nonnegative(),
+  totalQuantity: z.number().nonnegative(),
+  totalAmount: z.number().nonnegative(),
+});
+export type DailyMealOrderSlotStats = z.infer<typeof dailyMealOrderSlotStatsSchema>;
+
+export const dailyMealOrderStatsSchema = z.object({
+  date: z.string().optional(),
+  totalOrders: z.number().int().nonnegative(),
+  totalQuantity: z.number().nonnegative(),
+  totalRevenue: z.number().nonnegative(),
+  draftCount: z.number().int().nonnegative(),
+  confirmedCount: z.number().int().nonnegative(),
+  inPreparationCount: z.number().int().nonnegative(),
+  dispatchedCount: z.number().int().nonnegative(),
+  deliveredCount: z.number().int().nonnegative(),
+  cancelledCount: z.number().int().nonnegative(),
+  bySlot: z.array(dailyMealOrderSlotStatsSchema),
+  currency: z.string(),
+});
+export type DailyMealOrderStats = z.infer<typeof dailyMealOrderStatsSchema>;
+
+export const dailyMealOrderListResponseSchema = z.object({
+  items: z.array(dailyMealOrderListItemSchema),
+  total: z.number().int().nonnegative(),
+  page: z.number().int().positive(),
+  limit: z.number().int().positive(),
+  totalPages: z.number().int().nonnegative(),
+});
+export type DailyMealOrderListResponse = z.infer<typeof dailyMealOrderListResponseSchema>;
+
+// Plans (Standing Recurring Subscriptions)
+export const dailyMealPlanListItemSchema = z.object({
+  id: z.string().uuid(),
+  tenantId: z.string().uuid(),
+  planNumber: z.string(),
+  name: z.string(),
+  status: dailyMealPlanStatusSchema,
+  customerId: z.string().uuid(),
+  customerName: z.string(),
+  customerEmail: z.string().nullable().optional(),
+  customerPhone: z.string().nullable().optional(),
+  serviceSlot: dailyMealSlotSchema,
+  daysOfWeek: z.array(dayOfWeekSchema),
+  startDate: z.string(),
+  endDate: z.string().nullable().optional(),
+  defaultMenuId: z.string().uuid().nullable().optional(),
+  defaultMenuName: z.string().nullable().optional(),
+  defaultQuantity: z.number().positive(),
+  defaultUnitPrice: z.number().nonnegative(),
+  deliveryAddress: z.string().nullable().optional(),
+  deliveryNotes: z.string().nullable().optional(),
+  dietaryNotes: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  ordersCount: z.number().int().nonnegative().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type DailyMealPlanListItem = z.infer<typeof dailyMealPlanListItemSchema>;
+
+export const dailyMealPlanDetailSchema = dailyMealPlanListItemSchema.extend({
+  customer: z
+    .object({
+      id: z.string().uuid(),
+      name: z.string(),
+      email: z.string().nullable().optional(),
+      phone: z.string().nullable().optional(),
+    })
+    .optional(),
+  defaultMenu: z
+    .object({
+      id: z.string().uuid(),
+      name: z.string(),
+    })
+    .nullable()
+    .optional(),
+});
+export type DailyMealPlanDetail = z.infer<typeof dailyMealPlanDetailSchema>;
+
+export const createDailyMealPlanRequestSchema = z.object({
+  customerId: z.string().uuid("Customer is required"),
+  name: z.string().min(1, "Plan name is required"),
+  serviceSlot: dailyMealSlotSchema,
+  daysOfWeek: z.array(dayOfWeekSchema).min(1, "Select at least one day of the week"),
+  startDate: z.string().min(1, "Start date is required"),
+  endDate: z.string().optional().nullable(),
+  defaultMenuId: z.string().uuid().optional().nullable(),
+  defaultQuantity: z.number().positive("Default quantity must be greater than 0"),
+  defaultUnitPrice: z.number().nonnegative("Default unit price must be non-negative"),
+  deliveryAddress: z.string().optional().nullable(),
+  deliveryNotes: z.string().optional().nullable(),
+  dietaryNotes: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+});
+export type CreateDailyMealPlanRequest = z.infer<typeof createDailyMealPlanRequestSchema>;
+
+export const updateDailyMealPlanRequestSchema = z.object({
+  name: z.string().optional(),
+  status: dailyMealPlanStatusSchema.optional(),
+  serviceSlot: dailyMealSlotSchema.optional(),
+  daysOfWeek: z.array(dayOfWeekSchema).optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional().nullable(),
+  defaultMenuId: z.string().uuid().optional().nullable(),
+  defaultQuantity: z.number().positive().optional(),
+  defaultUnitPrice: z.number().nonnegative().optional(),
+  deliveryAddress: z.string().optional().nullable(),
+  deliveryNotes: z.string().optional().nullable(),
+  dietaryNotes: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+});
+export type UpdateDailyMealPlanRequest = z.infer<typeof updateDailyMealPlanRequestSchema>;
+
+export const generateOrdersFromPlanRequestSchema = z.object({
+  fromDate: z.string().min(1, "From date is required"),
+  toDate: z.string().min(1, "To date is required"),
+  overwriteExisting: z.boolean().optional().default(false),
+});
+export type GenerateOrdersFromPlanRequest = z.infer<typeof generateOrdersFromPlanRequestSchema>;
+
+export const generateOrdersResultSchema = z.object({
+  planId: z.string().uuid(),
+  generatedCount: z.number().int().nonnegative(),
+  skippedDates: z.array(z.string()),
+  createdOrderNumbers: z.array(z.string()),
+});
+export type GenerateOrdersResult = z.infer<typeof generateOrdersResultSchema>;
+
+export const createInvoiceFromMealOrderRequestSchema = z.object({
+  orderId: z.string().uuid("Order ID is required"),
+  title: z.string().optional(),
+  dueDate: z.string().optional(),
+  notes: z.string().optional(),
+});
+export type CreateInvoiceFromMealOrderRequest = z.infer<typeof createInvoiceFromMealOrderRequestSchema>;
+
+// ============================================================================
+// OPS-001: Inventory Management & Stock Movements
+// ============================================================================
+
+export const inventoryCategorySchema = z.enum([
+  "produce",
+  "meat_poultry",
+  "dairy",
+  "dry_goods",
+  "beverages",
+  "packaging",
+  "cleaning",
+  "other",
+]);
+export type InventoryCategory = z.infer<typeof inventoryCategorySchema>;
+
+export const stockMovementTypeSchema = z.enum([
+  "purchase_received",
+  "kitchen_consumption",
+  "waste_spoilage",
+  "adjustment_in",
+  "adjustment_out",
+  "transfer",
+  "return_to_supplier",
+]);
+export type StockMovementType = z.infer<typeof stockMovementTypeSchema>;
+
+export const stockStatusSchema = z.enum(["in_stock", "low_stock", "out_of_stock"]);
+export type StockStatus = z.infer<typeof stockStatusSchema>;
+
+export const inventoryItemSchema = z.object({
+  id: z.string().uuid(),
+  tenantId: z.string(),
+  sku: z.string(),
+  name: z.string(),
+  description: z.string().nullable().optional(),
+  category: inventoryCategorySchema,
+  unit: z.string(),
+  currentStock: z.number(),
+  minStockLevel: z.number(),
+  maxStockLevel: z.number().nullable().optional(),
+  reorderQuantity: z.number().nullable().optional(),
+  unitCost: z.number(),
+  valuation: z.number(),
+  status: stockStatusSchema,
+  storageLocation: z.string().nullable().optional(),
+  isArchived: z.boolean(),
+  notes: z.string().nullable().optional(),
+  catalogueItemId: z.string().nullable().optional(),
+  catalogueItem: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      sku: z.string().nullable().optional(),
+    })
+    .nullable()
+    .optional(),
+  currency: z.string().default("INR"),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type InventoryItem = z.infer<typeof inventoryItemSchema>;
+
+export const stockMovementSchema = z.object({
+  id: z.string().uuid(),
+  tenantId: z.string(),
+  movementNumber: z.string(),
+  inventoryItemId: z.string().uuid(),
+  inventoryItem: z
+    .object({
+      id: z.string(),
+      sku: z.string(),
+      name: z.string(),
+      unit: z.string(),
+    })
+    .nullable()
+    .optional(),
+  type: stockMovementTypeSchema,
+  quantity: z.number(),
+  signedQuantity: z.number(),
+  quantityBefore: z.number(),
+  quantityAfter: z.number(),
+  unitCost: z.number().nullable().optional(),
+  totalCost: z.number().nullable().optional(),
+  referenceType: z.string().nullable().optional(),
+  referenceId: z.string().nullable().optional(),
+  reason: z.string().nullable().optional(),
+  recordedBy: z.string().nullable().optional(),
+  createdAt: z.string(),
+});
+export type StockMovement = z.infer<typeof stockMovementSchema>;
+
+export const categoryBreakdownSchema = z.object({
+  category: inventoryCategorySchema,
+  itemCount: z.number(),
+  totalValuation: z.number(),
+});
+export type CategoryBreakdown = z.infer<typeof categoryBreakdownSchema>;
+
+export const inventorySummarySchema = z.object({
+  totalActiveSkus: z.number(),
+  totalValuation: z.number(),
+  lowStockCount: z.number(),
+  outOfStockCount: z.number(),
+  currency: z.string(),
+  categoryBreakdown: z.array(categoryBreakdownSchema),
+});
+export type InventorySummary = z.infer<typeof inventorySummarySchema>;
+
+export const createInventoryItemRequestSchema = z.object({
+  sku: z.string().min(1, "SKU is required").max(50),
+  name: z.string().min(1, "Item name is required").max(200),
+  description: z.string().optional().nullable(),
+  category: inventoryCategorySchema.default("dry_goods"),
+  unit: z.string().min(1, "Unit of measure is required").max(20).default("kg"),
+  currentStock: z.number().nonnegative().optional().default(0),
+  minStockLevel: z.number().nonnegative().optional().default(0),
+  maxStockLevel: z.number().nonnegative().optional().nullable(),
+  reorderQuantity: z.number().nonnegative().optional().nullable(),
+  unitCost: z.number().nonnegative().optional().default(0),
+  storageLocation: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  catalogueItemId: z.string().uuid().optional().nullable(),
+});
+export type CreateInventoryItemRequest = z.infer<typeof createInventoryItemRequestSchema>;
+
+export const updateInventoryItemRequestSchema = z.object({
+  sku: z.string().min(1).max(50).optional(),
+  name: z.string().min(1).max(200).optional(),
+  description: z.string().optional().nullable(),
+  category: inventoryCategorySchema.optional(),
+  unit: z.string().min(1).max(20).optional(),
+  minStockLevel: z.number().nonnegative().optional(),
+  maxStockLevel: z.number().nonnegative().optional().nullable(),
+  reorderQuantity: z.number().nonnegative().optional().nullable(),
+  unitCost: z.number().nonnegative().optional(),
+  storageLocation: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  catalogueItemId: z.string().uuid().optional().nullable(),
+  isArchived: z.boolean().optional(),
+});
+export type UpdateInventoryItemRequest = z.infer<typeof updateInventoryItemRequestSchema>;
+
+export const recordStockMovementRequestSchema = z.object({
+  inventoryItemId: z.string().uuid("Inventory item ID is required"),
+  type: stockMovementTypeSchema,
+  quantity: z.number().positive("Quantity must be greater than zero"),
+  unitCost: z.number().nonnegative().optional().nullable(),
+  referenceType: z.string().optional().nullable(),
+  referenceId: z.string().optional().nullable(),
+  reason: z.string().optional().nullable(),
+});
+export type RecordStockMovementRequest = z.infer<typeof recordStockMovementRequestSchema>;
+
+export const inventoryQuerySchema = z.object({
+  search: z.string().optional(),
+  category: inventoryCategorySchema.optional(),
+  status: stockStatusSchema.optional(),
+  includeArchived: z.boolean().optional().default(false),
+  page: z.number().int().positive().optional().default(1),
+  limit: z.number().int().positive().max(100).optional().default(50),
+});
+export type InventoryQuery = z.infer<typeof inventoryQuerySchema>;
+
+// Deterministic inventory helper functions
+export function calculateStockStatus(currentStock: number, minStockLevel: number): StockStatus {
+  if (currentStock <= 0) {
+    return "out_of_stock";
+  }
+  if (currentStock <= minStockLevel) {
+    return "low_stock";
+  }
+  return "in_stock";
+}
+
+export function calculateSignedQuantity(type: StockMovementType, quantity: number): number {
+  const absQty = Math.abs(quantity);
+  switch (type) {
+    case "purchase_received":
+    case "adjustment_in":
+      return absQty;
+    case "kitchen_consumption":
+    case "waste_spoilage":
+    case "adjustment_out":
+    case "return_to_supplier":
+      return -absQty;
+    case "transfer":
+      return 0;
+    default:
+      return 0;
+  }
+}
+
+export function calculateValuation(currentStock: number, unitCost: number): number {
+  const stock = Math.max(0, currentStock);
+  const cost = Math.max(0, unitCost);
+  return Math.round(stock * cost * 100) / 100;
+}
+
 

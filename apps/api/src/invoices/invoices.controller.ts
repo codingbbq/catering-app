@@ -1,6 +1,7 @@
 import type { AuthenticatedTenantContext } from '@catering/shared-types';
 import {
   createInvoiceFromBookingRequestSchema,
+  createInvoiceFromMealOrderRequestSchema,
   createInvoiceRequestSchema,
   invoiceFilterParamsSchema,
   recordInvoicePaymentSchema,
@@ -82,6 +83,20 @@ export class InvoicesController {
     const tenantCtx = this.getTenantContext(ctx);
     const dto = createInvoiceFromBookingRequestSchema.parse(body);
     return this.invoicesService.createInvoiceFromBooking(
+      tenantCtx.tenantId,
+      tenantCtx.userId,
+      dto,
+    );
+  }
+
+  @Post('invoices/from-meal-order')
+  async createInvoiceFromMealOrder(
+    @CurrentRequestContext() ctx: unknown,
+    @Body() body: unknown,
+  ) {
+    const tenantCtx = this.getTenantContext(ctx);
+    const dto = createInvoiceFromMealOrderRequestSchema.parse(body);
+    return this.invoicesService.createInvoiceFromDailyMealOrder(
       tenantCtx.tenantId,
       tenantCtx.userId,
       dto,
