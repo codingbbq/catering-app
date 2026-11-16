@@ -5,11 +5,11 @@ import type {
   CommunicationStatus,
 } from "@catering/shared-types";
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { use, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { useAuth } from "@/providers/auth-provider";
-import { CommunicationComposerModal } from "@/features/communications/communication-composer-modal";
 import { CommunicationTable } from "@/features/communications/communication-table";
 import {
   getCommunicationStats,
@@ -29,7 +29,6 @@ export default function CommunicationHubPage({
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedEntityType, setSelectedEntityType] = useState<string>("all");
   const [search, setSearch] = useState("");
-  const [isComposerOpen, setIsComposerOpen] = useState(false);
 
   // Queries
   const {
@@ -70,16 +69,15 @@ export default function CommunicationHubPage({
         title="Communication Hub"
         description="Centralize and monitor customer communications across Email, SMS, WhatsApp, and internal logs."
         actions={
-          <button
-            type="button"
-            onClick={() => setIsComposerOpen(true)}
+          <Link
+            href={`/tenant/${tenantSlug}/communications/new`}
             className="rounded-md bg-[#171717] px-3.5 py-2 text-xs font-medium text-white hover:bg-[#262626] transition-colors inline-flex items-center gap-1.5"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             Compose Message
-          </button>
+          </Link>
         }
       />
 
@@ -250,15 +248,6 @@ export default function CommunicationHubPage({
         isLoading={isLoading}
         onRefresh={() => refetch()}
       />
-
-      {/* Composer Modal */}
-      {isComposerOpen && (
-        <CommunicationComposerModal
-          tenantSlug={tenantSlug}
-          onClose={() => setIsComposerOpen(false)}
-          onCreated={() => refetch()}
-        />
-      )}
     </div>
   );
 }

@@ -2,11 +2,11 @@
 
 import type { CommunicationItem } from "@catering/shared-types";
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/providers/auth-provider";
 import { listCommunications } from "@/lib/communications-api";
 import { CommunicationChannelBadge } from "./communication-channel-badge";
-import { CommunicationComposerModal } from "./communication-composer-modal";
 import { CommunicationDetailModal } from "./communication-detail-modal";
 import { CommunicationStatusBadge } from "./communication-status-badge";
 
@@ -40,8 +40,23 @@ export function EntityCommunicationsTimeline({
   amount,
 }: EntityCommunicationsTimelineProps) {
   const { accessToken } = useAuth();
-  const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<CommunicationItem | null>(null);
+
+  const queryParams = new URLSearchParams({
+    entityType,
+    entityId,
+  });
+  if (entityLabel) queryParams.set("label", entityLabel);
+  if (customerName) queryParams.set("customerName", customerName);
+  if (recipientEmail) queryParams.set("recipientEmail", recipientEmail);
+  if (recipientPhone) queryParams.set("recipientPhone", recipientPhone);
+  if (quotationNumber) queryParams.set("quotationNumber", quotationNumber);
+  if (bookingNumber) queryParams.set("bookingNumber", bookingNumber);
+  if (eventDate) queryParams.set("eventDate", eventDate);
+  if (venue) queryParams.set("venue", venue);
+  if (amount != null) queryParams.set("amount", String(amount));
+
+  const newCommunicationHref = `/tenant/${tenantSlug}/communications/new?${queryParams.toString()}`;
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["entity-communications", entityType, entityId],
@@ -68,16 +83,15 @@ export function EntityCommunicationsTimeline({
             {items.length}
           </span>
         </div>
-        <button
-          type="button"
-          onClick={() => setIsComposerOpen(true)}
+        <Link
+          href={newCommunicationHref}
           className="rounded-md bg-[#171717] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#262626] transition-colors inline-flex items-center gap-1.5"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
           Send Message
-        </button>
+        </Link>
       </div>
 
       {/* Content */}
@@ -145,28 +159,6 @@ export function EntityCommunicationsTimeline({
             </div>
           ))}
         </div>
-      )}
-
-      {/* Composer Modal */}
-      {isComposerOpen && (
-        <CommunicationComposerModal
-          tenantSlug={tenantSlug}
-          initialContext={{
-            type: entityType,
-            id: entityId,
-            label: entityLabel,
-            customerName,
-            recipientEmail,
-            recipientPhone,
-            quotationNumber,
-            bookingNumber,
-            eventDate,
-            venue,
-            amount,
-          }}
-          onClose={() => setIsComposerOpen(false)}
-          onCreated={() => refetch()}
-        />
       )}
 
       {/* Detail Modal */}

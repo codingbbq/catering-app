@@ -88,12 +88,23 @@ export default function BookingsPage() {
         title="Event Bookings"
         description="Track confirmed events, manage fulfillment details, and coordinate kitchen and service schedules."
         actions={
-          <Link
-            href={`/tenant/${tenantSlug}/bookings/new`}
-            className="rounded bg-[#171717] px-3.5 py-1.5 text-xs font-medium text-white hover:bg-[#262626] transition-colors shadow-xs"
-          >
-            + New Booking
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/tenant/${tenantSlug}/calendar`}
+              className="inline-flex items-center gap-1.5 rounded border border-[#E5E5E5] bg-white px-3.5 py-1.5 text-xs font-medium text-[#171717] hover:bg-[#FAFAFA] transition-colors"
+            >
+              <svg className="h-3.5 w-3.5 text-[#737373]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span>Dedicated Calendar</span>
+            </Link>
+            <Link
+              href={`/tenant/${tenantSlug}/bookings/new`}
+              className="rounded bg-[#171717] px-3.5 py-1.5 text-xs font-medium text-white hover:bg-[#262626] transition-colors shadow-xs"
+            >
+              + New Booking
+            </Link>
+          </div>
         }
       />
 
