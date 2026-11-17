@@ -5,6 +5,14 @@ import type {
   CommunicationStats,
   CommunicationTemplateItem,
   CreateCommunicationRequest,
+  PlatformCommunicationConfigDto,
+  PlatformCommunicationUsageSummary,
+  TenantCommunicationQuotaDto,
+  TenantQuotaOverviewItem,
+  TestGatewayConnectionRequest,
+  TestGatewayConnectionResponse,
+  UpdatePlatformCommunicationConfigRequest,
+  UpdateTenantQuotaRequest,
 } from "@catering/shared-types";
 import { apiFetch } from "./api-client";
 
@@ -65,3 +73,63 @@ export function retryCommunication(
     token,
   });
 }
+
+export function getTenantQuota(
+  token: string,
+): Promise<TenantCommunicationQuotaDto> {
+  return apiFetch("/communications/quota", { token });
+}
+
+// Platform Super Admin Gateway & Quota APIs
+export function getPlatformCommunicationConfig(
+  token: string,
+): Promise<PlatformCommunicationConfigDto> {
+  return apiFetch("/platform/communications/config", { token });
+}
+
+export function updatePlatformCommunicationConfig(
+  dto: UpdatePlatformCommunicationConfigRequest,
+  token: string,
+): Promise<PlatformCommunicationConfigDto> {
+  return apiFetch("/platform/communications/config", {
+    method: "PATCH",
+    body: JSON.stringify(dto),
+    token,
+  });
+}
+
+export function testGatewayConnection(
+  dto: TestGatewayConnectionRequest,
+  token: string,
+): Promise<TestGatewayConnectionResponse> {
+  return apiFetch("/platform/communications/test-connection", {
+    method: "POST",
+    body: JSON.stringify(dto),
+    token,
+  });
+}
+
+export function getPlatformTenantQuotas(
+  token: string,
+): Promise<TenantQuotaOverviewItem[]> {
+  return apiFetch("/platform/communications/quotas", { token });
+}
+
+export function updateTenantQuota(
+  tenantId: string,
+  dto: UpdateTenantQuotaRequest,
+  token: string,
+): Promise<TenantCommunicationQuotaDto> {
+  return apiFetch(`/platform/communications/quotas/${tenantId}`, {
+    method: "PATCH",
+    body: JSON.stringify(dto),
+    token,
+  });
+}
+
+export function getPlatformUsageSummary(
+  token: string,
+): Promise<PlatformCommunicationUsageSummary> {
+  return apiFetch("/platform/communications/usage-summary", { token });
+}
+

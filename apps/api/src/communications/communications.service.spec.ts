@@ -6,6 +6,8 @@ describe('CommunicationsService', () => {
   let service: CommunicationsService;
   let mockPrisma: any;
   let mockAuditLogService: any;
+  let mockGatewayRouter: any;
+  let mockQuotaMeteringService: any;
 
   const tenantId = '00000000-0000-0000-0000-000000000001';
   const userId = '11111111-1111-1111-1111-111111111111';
@@ -44,7 +46,33 @@ describe('CommunicationsService', () => {
       record: vi.fn(),
     };
 
-    service = new CommunicationsService(mockPrisma, mockAuditLogService);
+    mockGatewayRouter = {
+      dispatch: vi.fn().mockResolvedValue({
+        provider: 'mock',
+        providerMessageId: 'msg_123',
+        status: 'delivered',
+        sentAt: new Date(),
+        deliveredAt: new Date(),
+      }),
+      testConnection: vi.fn(),
+    };
+
+    mockQuotaMeteringService = {
+      checkAndReserveQuota: vi.fn().mockResolvedValue({ isOverage: false }),
+      rollbackQuota: vi.fn().mockResolvedValue(undefined),
+      recordUsageLedger: vi.fn().mockResolvedValue(undefined),
+      getOrCreateTenantQuota: vi.fn(),
+      updateTenantQuota: vi.fn(),
+      getAllTenantQuotas: vi.fn(),
+      getPlatformUsageSummary: vi.fn(),
+    };
+
+    service = new CommunicationsService(
+      mockPrisma,
+      mockAuditLogService,
+      mockGatewayRouter,
+      mockQuotaMeteringService,
+    );
   });
 
   describe('listCommunications', () => {
@@ -303,6 +331,89 @@ describe('CommunicationsService', () => {
       const templates = await service.getTemplates(tenantId);
       expect(templates).toHaveLength(1);
       expect(mockPrisma.communicationTemplate.createMany).toHaveBeenCalled();
+    });
+  });
+
+  describe('quota and metering integration', () => {
+    it('should reserve quota and record ledger on successful delivery', async () => {
+      mockQuotaMeteringService.checkAndReserveQuota.mockResolvedValueOnce({ isOverage: false });
+      mockPrisma.communicationLog.create.mockResolvedValueOnce({
+        id: '99999999-9999-9999-9999-999999999999',
+        tenantId,
+        channel: 'email',
+        recipient: 'test@example.com',
+        status: 'delivered',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      await service.createCommunication(tenantId, userId, {
+        channel: 'email',
+        recipient: 'test@example.com',
+        subject: 'Quota test',
+        content: 'Testing quota reservation',
+      });
+
+      expect(mockQuotaMeteringService.checkAndReserveQuota).toHaveBeenCalledWith(tenantId, 'email');
+      expect(mockQuotaMeteringService.recordUsageLedger).toHaveBeenCalledWith(
+        tenantId,
+        '99999999-9999-9999-9999-999999999999',
+        'email',
+        false,
+      );
+    });
+
+    it('should rollback quota if provider dispatch fails', async () => {
+      mockQuotaMeteringService.checkAndReserveQuota.mockResolvedValueOnce({ isOverage: false });
+      mockGatewayRouter.dispatch.mockResolvedValueOnce({
+        provider: 'mock',
+        status: 'failed',
+        errorMessage: 'Connection timeout',
+      });
+      mockPrisma.communicationLog.create.mockResolvedValueOnce({
+        id: '88888888-8888-8888-8888-888888888888',
+        tenantId,
+        channel: 'sms',
+        recipient: '+1234567890',
+        status: 'failed',
+        errorMessage: 'Connection timeout',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      await service.createCommunication(tenantId, userId, {
+        channel: 'sms',
+        recipient: '+1234567890',
+        content: 'Test SMS failure',
+      });
+
+      expect(mockQuotaMeteringService.rollbackQuota).toHaveBeenCalledWith(tenantId, 'sms');
+      expect(mockQuotaMeteringService.recordUsageLedger).not.toHaveBeenCalled();
+    });
+
+    it('should delegate getTenantQuota to QuotaMeteringService', async () => {
+      const mockQuota = {
+        id: 'quota-123',
+        tenantId,
+        emailLimit: 500,
+        emailUsed: 12,
+        smsLimit: 50,
+        smsUsed: 2,
+        whatsappLimit: 100,
+        whatsappUsed: 5,
+        allowOverage: false,
+        overageRateEmail: 0.01,
+        overageRateSms: 0.03,
+        overageRateWhatsapp: 0.05,
+        periodStart: '2026-11-01T00:00:00.000Z',
+        periodEnd: '2026-12-01T00:00:00.000Z',
+        updatedAt: '2026-11-01T00:00:00.000Z',
+      };
+      mockQuotaMeteringService.getOrCreateTenantQuota.mockResolvedValueOnce(mockQuota);
+
+      const quota = await service.getTenantQuota(tenantId);
+      expect(quota).toEqual(mockQuota);
+      expect(mockQuotaMeteringService.getOrCreateTenantQuota).toHaveBeenCalledWith(tenantId);
     });
   });
 });

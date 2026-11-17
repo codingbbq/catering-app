@@ -2,6 +2,7 @@
 
 import { useParams, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/ui/page-header";
+import { TenantQuotaCard } from "@/features/communications/tenant-quota-card";
 import {
   CommunicationComposerForm,
   type ContextEntityInfo,
@@ -54,6 +55,8 @@ export default function NewCommunicationPage() {
         backHref={`/tenant/${tenantSlug}/communications`}
         backLabel="Back to Communications"
       />
+
+      <TenantQuotaCard />
 
       <CommunicationComposerForm
         tenantSlug={tenantSlug}

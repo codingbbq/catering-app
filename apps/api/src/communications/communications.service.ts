@@ -5,6 +5,7 @@ import type {
   CommunicationStats,
   CommunicationTemplateItem,
   CreateCommunicationRequest,
+  TenantCommunicationQuotaDto,
 } from '@catering/shared-types';
 import {
   BadRequestException,
@@ -13,10 +14,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { AuditLogService } from '../tenancy/audit-log.service.js';
-import {
-  CommunicationProvider,
-  MockCommunicationProvider,
-} from './communication-provider.js';
+import { GatewayRouterService } from './gateway-router.service.js';
+import { QuotaMeteringService } from './quota-metering.service.js';
 
 const DEFAULT_TEMPLATES = [
   {
@@ -63,13 +62,15 @@ const DEFAULT_TEMPLATES = [
 
 @Injectable()
 export class CommunicationsService {
-  private readonly provider: CommunicationProvider;
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLogService: AuditLogService,
-  ) {
-    this.provider = new MockCommunicationProvider();
+    private readonly gatewayRouter: GatewayRouterService,
+    private readonly quotaMeteringService: QuotaMeteringService,
+  ) {}
+
+  async getTenantQuota(tenantId: string): Promise<TenantCommunicationQuotaDto> {
+    return this.quotaMeteringService.getOrCreateTenantQuota(tenantId);
   }
 
   private mapToItem(log: any): CommunicationItem {
@@ -354,11 +355,16 @@ export class CommunicationsService {
     let errorMessage: string | undefined = undefined;
     let sentAt: Date | undefined = undefined;
     let deliveredAt: Date | undefined = undefined;
+    let isOverage = false;
 
     if (dto.isDraft) {
       status = 'draft';
     } else {
-      const providerResult = await this.provider.send({
+      // Check and reserve quota before dispatch
+      const quotaCheck = await this.quotaMeteringService.checkAndReserveQuota(tenantId, dto.channel);
+      isOverage = quotaCheck.isOverage;
+
+      const providerResult = await this.gatewayRouter.dispatch({
         channel: dto.channel,
         recipient: dto.recipient,
         sender: dto.sender ?? undefined,
@@ -373,6 +379,11 @@ export class CommunicationsService {
       sentAt = providerResult.sentAt;
       deliveredAt = providerResult.deliveredAt;
       errorMessage = providerResult.errorMessage;
+
+      // Rollback quota on immediate failure
+      if (status === 'failed') {
+        await this.quotaMeteringService.rollbackQuota(tenantId, dto.channel);
+      }
     }
 
     // 3. Persist CommunicationLog
@@ -408,6 +419,11 @@ export class CommunicationsService {
         booking: { select: { id: true, bookingNumber: true, title: true } },
       },
     });
+
+    // Record ledger if successfully dispatched
+    if (!dto.isDraft && status !== 'failed') {
+      await this.quotaMeteringService.recordUsageLedger(tenantId, log.id, dto.channel, isOverage);
+    }
 
     // 4. Log enquiry activity if linked
     if (enquiryId && !dto.isDraft) {
@@ -460,8 +476,13 @@ export class CommunicationsService {
       throw new BadRequestException('This communication has already been successfully delivered.');
     }
 
-    // Attempt re-dispatch
-    const providerResult = await this.provider.send({
+    // Attempt re-dispatch: reserve quota first
+    const { isOverage } = await this.quotaMeteringService.checkAndReserveQuota(
+      tenantId,
+      existing.channel as any,
+    );
+
+    const providerResult = await this.gatewayRouter.dispatch({
       channel: existing.channel as any,
       recipient: existing.recipient,
       sender: existing.sender ?? undefined,
@@ -469,6 +490,10 @@ export class CommunicationsService {
       content: existing.content,
       metadata: (existing.metadata as Record<string, any>) ?? undefined,
     });
+
+    if (providerResult.status === 'failed') {
+      await this.quotaMeteringService.rollbackQuota(tenantId, existing.channel as any);
+    }
 
     const updateData: any = {
       status: providerResult.status as any,
@@ -490,6 +515,15 @@ export class CommunicationsService {
         booking: { select: { id: true, bookingNumber: true, title: true } },
       },
     });
+
+    if (providerResult.status !== 'failed') {
+      await this.quotaMeteringService.recordUsageLedger(
+        tenantId,
+        updated.id,
+        existing.channel as any,
+        isOverage,
+      );
+    }
 
     this.auditLogService.record({
       scope: 'tenant',

@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { useAuth } from "@/providers/auth-provider";
 import { CommunicationTable } from "@/features/communications/communication-table";
+import { TenantQuotaCard } from "@/features/communications/tenant-quota-card";
 import {
   getCommunicationStats,
   listCommunications,
@@ -139,6 +140,9 @@ export default function CommunicationHubPage({
           </CardContent>
         </Card>
       </div>
+
+      {/* Monthly Communication Allowance */}
+      <TenantQuotaCard />
 
       {/* Search & Filter Bar */}
       <div className="space-y-3 rounded-lg border border-[#E5E5E5] bg-white p-4">

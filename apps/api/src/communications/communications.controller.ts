@@ -66,6 +66,12 @@ export class CommunicationsController {
     return this.communicationsService.getTemplates(tenantCtx.tenantId);
   }
 
+  @Get('communications/quota')
+  async getQuota(@CurrentRequestContext() ctx: unknown) {
+    const tenantCtx = this.getTenantContext(ctx);
+    return this.communicationsService.getTenantQuota(tenantCtx.tenantId);
+  }
+
   @Get('communications/:id')
   async getCommunication(
     @CurrentRequestContext() ctx: unknown,

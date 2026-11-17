@@ -675,6 +675,46 @@ async function main() {
     console.log('Seeded demo communication logs (Email, WhatsApp, SMS, Internal Note, and Failed Retry test)');
   }
 
+  // --- Seed Platform Communication Gateway Configuration & Tenant Quotas ---
+  await prisma.platformCommunicationConfig.upsert({
+    where: { id: 'default' },
+    update: {},
+    create: {
+      id: 'default',
+      mode: 'mock',
+      resendFromEmail: 'onboarding@resend.dev',
+      resendFromName: 'Catering Platform Desk',
+      twilioWhatsappNumber: 'whatsapp:+14155238886',
+      isEmailConfigured: false,
+      isSmsConfigured: false,
+      isWhatsappConfigured: false,
+    },
+  });
+
+  const now = new Date();
+  const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+  await prisma.tenantCommunicationQuota.upsert({
+    where: { tenantId: tenant.id },
+    update: {},
+    create: {
+      tenantId: tenant.id,
+      periodStart: now,
+      periodEnd: periodEnd,
+      emailLimit: 1000,
+      emailUsed: 2,
+      smsLimit: 100,
+      smsUsed: 1,
+      whatsappLimit: 200,
+      whatsappUsed: 1,
+      allowOverage: false,
+      overageRateEmail: 0.01,
+      overageRateSms: 0.03,
+      overageRateWhatsapp: 0.05,
+    },
+  });
+  console.log('Seeded platform gateway config & demo tenant communication quota');
+
   // --- Seed Demo Daily Meal Plans & Orders (DMO-001) ---
   const existingMealPlan = await prisma.dailyMealPlan.findFirst({
     where: { tenantId: tenant.id },

@@ -20,6 +20,21 @@ export default function PlatformLayout({ children }: { children: ReactNode }) {
             </Link>
             <div className="h-4 w-px bg-[#E5E5E5]" />
             <AccessContextBadge scope="platform" />
+            <div className="h-4 w-px bg-[#E5E5E5] hidden md:block" />
+            <nav className="hidden md:flex items-center gap-1 text-xs">
+              <Link
+                href="/platform"
+                className="px-2.5 py-1 text-[#262626] hover:text-[#171717] hover:bg-stone-100 rounded-md font-medium transition-colors"
+              >
+                Tenants
+              </Link>
+              <Link
+                href="/platform/communications"
+                className="px-2.5 py-1 text-[#262626] hover:text-[#171717] hover:bg-stone-100 rounded-md font-medium transition-colors"
+              >
+                Gateways & Quotas
+              </Link>
+            </nav>
           </div>
           <UserNav signInHref="/platform/sign-in" />
         </div>
